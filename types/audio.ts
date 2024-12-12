@@ -1,3 +1,4 @@
+// types/audio.ts
 export interface Song {
   id: string;
   title: string;
@@ -13,8 +14,8 @@ export interface EnvironmentalSound {
   category: 'nature' | 'urban';
   subCategory: string;
   path: string;
-  thumbnail: string; // サムネイル画像のパスを追加
-  characteristics: string[]; // 音の特徴を追加
+  thumbnail: string;
+  characteristics: string[];
 }
 
 export interface BridgeConfig {
@@ -23,7 +24,6 @@ export interface BridgeConfig {
   environmentalSoundId: string;
 }
 
-// 各コンポーネントのProps型も定義
 export interface AudioPlayerProps {
   currentSong: Song | null;
   onPlayStateChange: (isPlaying: boolean) => void;
@@ -32,10 +32,11 @@ export interface AudioPlayerProps {
 export interface BridgeControllerProps {
   config: BridgeConfig;
   onConfigChange: (config: BridgeConfig) => void;
-  selectedSound: EnvironmentalSound | null; // 選択中の環境音を追加
+  selectedSound: EnvironmentalSound | null;
 }
 
 export interface SoundSelectorProps {
   sounds: EnvironmentalSound[];
   onSoundSelect: (sound: EnvironmentalSound) => void;
+  selectedSoundId: string | undefined;
 }

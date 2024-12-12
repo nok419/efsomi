@@ -86,6 +86,7 @@ export default function App() {
               <SoundSelector
                 sounds={environmentalSounds}
                 onSoundSelect={handleSoundSelect}
+                selectedSoundId={selectedSound?.id}
               />
             </Grid>
             <MusicSelector
