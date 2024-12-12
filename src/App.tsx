@@ -1,40 +1,109 @@
-import { useEffect, useState } from "react";
-import type { Schema } from "../amplify/data/resource";
-import { generateClient } from "aws-amplify/data";
+// App.tsx
+import { useState, useEffect } from 'react';
+import { View, Grid, ThemeProvider } from '@aws-amplify/ui-react';
+import AudioPlayer from './components/shared/AudioPlayer';
+import SoundSelector from './components/shared/SoundSelector';
+import BridgeController from './components/shared/BridgeController';
+import { Song, EnvironmentalSound, BridgeConfig } from '../types/audio';
+import { songs } from './data/songs';
+import { environmentalSounds } from './data/environmentalSounds';
+import MusicSelector from './components/shared/MusicSelector';
 
-const client = generateClient<Schema>();
+const theme = {
+  name: 'efsomi-theme',
+  tokens: {
+    colors: {
+      background: {
+        primary: '#ffffff',
+        secondary: '#f8fafc',
+        tertiary: '#f1f5f9',
+      },
+      brand: {
+        primary: '#1a365d',
+        secondary: '#2a4a7f',
+        tertiary: '#3a5a9f',
+      },
+    }
+  }
+};
 
-function App() {
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
+export default function App() {
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [nextSong, setNextSong] = useState<Song | null>(null);
+  const [selectedSound, setSelectedSound] = useState<EnvironmentalSound | null>(null);
+  const [bridgeConfig, setBridgeConfig] = useState<BridgeConfig>({
+    duration: 5,
+    fadeDuration: 1,
+    environmentalSoundId: ''
+  });
 
   useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
+    if (songs.length > 0) {
+      setCurrentSong(songs[0]);
+      if (songs.length > 1) {
+        setNextSong(songs[1]);
+      }
+    }
   }, []);
 
-  function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
-  }
+  const handleSoundSelect = (sound: EnvironmentalSound) => {
+    setSelectedSound(sound);
+    setBridgeConfig(prev => ({
+      ...prev,
+      environmentalSoundId: sound.id
+    }));
+  };
+
+  //nextSong
+  useEffect(() => {
+    if (nextSong) {
+      console.log('Next song queued:', nextSong.title);
+      // 次の曲の準備処理をここに実装予定
+    }
+  }, [nextSong]);
 
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => (
-          <li key={todo.id}>{todo.content}</li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
-      </div>
-    </main>
+    <ThemeProvider theme={theme}>
+      <View
+        backgroundColor="background.secondary"
+        minHeight="100vh"
+        padding={{ base: 'medium', large: 'large' }}
+      >
+        <Grid
+          templateColumns={{ base: '1fr', large: '1fr 320px' }}
+          gap="medium"
+        >
+          <View>
+            <Grid
+              templateColumns={{ base: '1fr', medium: '1fr 1fr' }}
+              gap="medium"
+            >
+              <BridgeController
+                config={bridgeConfig}
+                onConfigChange={setBridgeConfig}
+                selectedSound={selectedSound}
+              />
+              <SoundSelector
+                sounds={environmentalSounds}
+                onSoundSelect={handleSoundSelect}
+              />
+            </Grid>
+            <MusicSelector
+              presetSongs={songs}
+              onSongSelect={setNextSong}
+              onPlaylistLoad={(url) => {
+                console.log('Loading playlist:', url);
+              }}
+            />
+          </View>
+          <AudioPlayer
+            currentSong={currentSong}
+            onPlayStateChange={(isPlaying) => {
+              console.log('Playback state:', isPlaying);
+            }}
+          />
+        </Grid>
+      </View>
+    </ThemeProvider>
   );
 }
-
-export default App;
