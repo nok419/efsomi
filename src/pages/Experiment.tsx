@@ -26,6 +26,13 @@ export default function Experiment() {
     }
   }, []);
 
+  useEffect(() => {
+    if (nextSong) {
+      // 次の曲の準備処理
+      console.log('Next song queued:', nextSong.title);
+    }
+  }, [nextSong]);
+
   return (
     <View padding="medium">
       <Grid

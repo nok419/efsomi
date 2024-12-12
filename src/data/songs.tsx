@@ -1,5 +1,5 @@
 // src/data/songs.tsx
-import { Song } from '../types/audio';
+import { Song } from '../../types/audio';
 
 export const songs: Song[] = [
   {
