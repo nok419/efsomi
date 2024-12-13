@@ -1,10 +1,10 @@
 // App.tsx
 import { useState, useEffect } from 'react';
-import { View,Card,Flex,Image,Button,Grid, ThemeProvider } from '@aws-amplify/ui-react';
+import { View, Card, Button, Grid, ThemeProvider } from '@aws-amplify/ui-react';
 import AudioPlayer from './components/shared/AudioPlayer';
 import SoundSelector from './components/shared/SoundSelector';
 import BridgeController from './components/shared/BridgeController';
-import { Song, EnvironmentalSound, BridgeConfig ,ReviewData} from '../types/audio';
+import { Song, EnvironmentalSound, BridgeConfig, ReviewData } from '../types/audio';
 import { songs } from './data/songs';
 import { environmentalSounds } from './data/environmentalSounds';
 import MusicSelector from './components/shared/MusicSelector';
@@ -83,10 +83,10 @@ export default function App() {
     fadeDuration: 1,
     environmentalSoundId: ''
   });
+
   const handleReviewSubmit = (data: ReviewData) => {
     console.log('Review submitted:', data);
     setIsReviewOpen(false);
-    // TODO: Amplify DataStore等でデータを保存
   };
 
   useEffect(() => {
@@ -98,26 +98,16 @@ export default function App() {
     }
   }, []);
 
-  const handleSoundSelect = (sound: EnvironmentalSound) => {
-    setSelectedSound(sound);
-    setBridgeConfig(prev => ({
-      ...prev,
-      environmentalSoundId: sound.id
-    }));
-  };
-
-  //nextSong
   useEffect(() => {
     if (nextSong) {
       console.log('Next song queued:', nextSong.title);
-      // 次の曲の準備処理をここに実装予定
     }
   }, [nextSong]);
 
   return (
     <ThemeProvider theme={theme}>
-    <View backgroundColor="background.secondary" minHeight="100vh" padding="large">
-      <Grid templateColumns={{ base: '1fr', large: '1fr 320px' }} gap="medium">
+      <View backgroundColor="background.secondary" minHeight="100vh" padding="large">
+        <Grid templateColumns={{ base: '1fr', large: '1fr 320px' }} gap="medium">
           <View>
             <Grid
               templateColumns={{ base: '1fr', medium: '1fr 1fr' }}
@@ -128,70 +118,50 @@ export default function App() {
                 onConfigChange={setBridgeConfig}
                 selectedSound={selectedSound}
               />
+
               <SoundSelector
                 sounds={environmentalSounds}
-                onSoundSelect={handleSoundSelect}
+                onSoundSelect={setSelectedSound}
                 selectedSoundId={selectedSound?.id}
               />
             </Grid>
+
             <MusicSelector
               presetSongs={songs}
               onSongSelect={setNextSong}
+              selectedSong={nextSong}
               onPlaylistLoad={(url) => {
                 console.log('Loading playlist:', url);
               }}
             />
-            {/* 音楽プレイヤー部分を改修 */}
-            <Card>
-              <Flex direction="column" gap="medium">
-                {/* コントロール部分を先に */}
-                <View padding="medium">
-                  <AudioPlayer
-                    currentSong={currentSong}
-                    onPlayStateChange={(isPlaying) => {
-                      console.log('Playback state:', isPlaying);
-                    }}
-                  />
-                </View>
-                
-                {/* レビューボタン */}
-                {/* レビューボタンを追加 */}
-                <Button
-                  variation="primary"
-                  size="large"
-                  onClick={() => setIsReviewOpen(true)}
-                  marginTop="medium"
-                >
-                  評価を入力
-          </Button>
 
-                {/* アルバムアート部分を後に */}
-                {currentSong?.albumArt && (
-                  <View height="200px">
-                    <Image
-                      src={currentSong.albumArt}
-                      alt={currentSong.title}
-                      objectFit="cover"
-                      width="100%"
-                      height="100%"
-                      borderRadius="medium"
-                    />
-                  </View>
-                )}
-              </Flex>
+            <Card>
+              <AudioPlayer
+                currentSong={currentSong}
+                onPlayStateChange={(isPlaying) => {
+                  console.log('Playback state:', isPlaying);
+                }}
+              />
+              
+              <Button
+                variation="primary"
+                size="large"
+                onClick={() => setIsReviewOpen(true)}
+                marginTop="medium"
+              >
+                評価を入力
+              </Button>
             </Card>
           </View>
-          
         </Grid>
-        
-        
 
-        {/* レビューダイアログ */}
         <ReviewDialog
           isOpen={isReviewOpen}
           onClose={() => setIsReviewOpen(false)}
           onSubmit={handleReviewSubmit}
           currentTrack={currentSong}
+          nextTrack={nextSong}
+          bridgeSound={selectedSound}
         />
       </View>
     </ThemeProvider>

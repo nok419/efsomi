@@ -30,16 +30,25 @@ export interface AudioPlayerProps {
   onPlayStateChange: (isPlaying: boolean) => void;
 }
 
-export interface BridgeControllerProps {
-  config: BridgeConfig;
-  onConfigChange: (config: BridgeConfig) => void;
-  selectedSound: EnvironmentalSound | null;
+export interface SoundSelectorProps {
+  sounds: EnvironmentalSound[];
+  onSoundSelect: (sound: EnvironmentalSound) => void;
+  selectedSoundId?: string;
+}
+
+export interface ReviewDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: ReviewData) => void;
+  currentTrack: Song | null;
+  nextTrack: Song | null;
+  bridgeSound: EnvironmentalSound | null;
 }
 
 export interface SoundSelectorProps {
   sounds: EnvironmentalSound[];
   onSoundSelect: (sound: EnvironmentalSound) => void;
-  selectedSoundId: string | undefined;
+  selectedSoundId?: string | undefined;
 }
 
 export interface ReviewData {
@@ -54,11 +63,4 @@ export interface ReviewData {
     wouldUseAgain: boolean;
   };
   timestamp: number;
-}
-
-export interface ReviewDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: ReviewData) => void;
-  currentTrack: { title: string; artist: string } | null;
 }

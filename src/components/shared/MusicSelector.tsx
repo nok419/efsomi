@@ -6,12 +6,14 @@ interface MusicSelectorProps {
   presetSongs: Song[];
   onSongSelect: (song: Song) => void;
   onPlaylistLoad: (url: string) => void;
+  selectedSong: Song | null; // 追加
 }
 
 export default function MusicSelector({ 
   presetSongs, 
   onSongSelect, 
-  onPlaylistLoad 
+  onPlaylistLoad,
+  selectedSong 
 }: MusicSelectorProps) {
   const [playlistUrl, setPlaylistUrl] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -30,7 +32,7 @@ export default function MusicSelector({
               width="100%"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             >
-              音楽を選択
+              {selectedSong ? selectedSong.title : '音楽を選択'}
             </Button>
             {isDropdownOpen && (
               <Card
@@ -47,6 +49,7 @@ export default function MusicSelector({
                     width="100%"
                     textAlign="left"
                     padding="small"
+                    backgroundColor={selectedSong?.id === song.id ? 'background.tertiary' : undefined}
                     onClick={() => {
                       onSongSelect(song);
                       setIsDropdownOpen(false);

@@ -1,6 +1,8 @@
-import { Flex,  Button, View ,Text,Icon} from '@aws-amplify/ui-react';
+// components/shared/AudioPlayer.tsx
+import { Flex, Button, View, Text, Icon } from '@aws-amplify/ui-react';
 import { AudioPlayerProps } from '../../../types/audio';
 import { useState } from 'react';
+
 export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime] = useState(0);
@@ -13,73 +15,102 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
   };
 
   return (
-    <Flex direction="column" gap="medium" padding="large">
-      {/* Track Info */}
-      <Flex direction="column" alignItems="center" gap="medium">
-        
-        <Text fontSize="xl" fontWeight="bold">{currentSong?.title}</Text>
-        <Text variation="secondary" fontSize="large">{currentSong?.artist}</Text>
-      </Flex>
+    <View
+      padding="large"
+      backgroundColor="background.secondary"
+      style={{
+        backgroundImage: currentSong?.albumArt ? `url(${currentSong.albumArt})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '8px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      {/* オーバーレイ層 */}
+      <View
+        style={{
+          background: 'rgba(0, 0, 0, 0.6)',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backdropFilter: 'blur(10px)'
+        }}
+      />
 
-      {/* Controls */}
-      <Flex justifyContent="center" gap="large" alignItems="center">
-        <Button 
-          variation="link"
-          size="large"
-          fontSize="xxxl"
-        >
-          ⏮
-        </Button>
-        <Button
-          size="large"
-          variation="primary"
-          width="80px"
-          height="80px"
-          borderRadius="full"
-          onClick={() => {
-            setIsPlaying(!isPlaying);
-            onPlayStateChange(!isPlaying);
-          }}
-        >
-          <Icon
-            fontSize="50px"
-            ariaLabel={isPlaying ? "Pause" : "Play"}
-          >
-            {isPlaying ? '⏸' : '▶️'}
-          </Icon>
-        </Button>
-        <Button 
-          variation="link"
-          size="large"
-          fontSize="xxxl"
-        >
-          ⏭
-        </Button>
-      </Flex>
-
-      {/* Seek Bar */}
-      <Flex direction="column" gap="small" width="100%">
-        <View 
-          height="8px" 
-          backgroundColor="background.tertiary"
-          borderRadius="full"
-          overflow="hidden"
-        >
-          <View 
-            width={`${(currentTime / duration) * 100}%`}
-            height="100%"
-            backgroundColor="brand.primary"
-          />
-        </View>
-        <Flex justifyContent="space-between">
-          <Text fontSize="small" variation="secondary">
-            {formatTime(currentTime)}
+      {/* コンテンツ層 */}
+      <Flex direction="column" gap="medium" style={{ position: 'relative', zIndex: 1 }}>
+        {/* Track Info */}
+        <Flex direction="column" alignItems="center" gap="medium">
+          <Text color="white" fontSize="xl" fontWeight="bold">
+            {currentSong?.title || 'No track selected'}
           </Text>
-          <Text fontSize="small" variation="secondary">
-            {formatTime(duration)}
+          <Text color="white" variation="secondary" fontSize="large">
+            {currentSong?.artist || 'Unknown artist'}
           </Text>
         </Flex>
+
+        {/* Controls */}
+        <Flex justifyContent="center" gap="large" alignItems="center">
+          <Button
+            variation="link"
+            size="large"
+            fontSize="xxxl"
+            color="white"
+          >
+            ⏮
+          </Button>
+          <Button
+            size="large"
+            variation="primary"
+            width="80px"
+            height="80px"
+            borderRadius="full"
+            onClick={() => {
+              setIsPlaying(!isPlaying);
+              onPlayStateChange(!isPlaying);
+            }}
+          >
+            <Icon fontSize="50px" ariaLabel={isPlaying ? "Pause" : "Play"}>
+              {isPlaying ? '⏸' : '▶️'}
+            </Icon>
+          </Button>
+          <Button
+            variation="link"
+            size="large"
+            fontSize="xxxl"
+            color="white"
+          >
+            ⏭
+          </Button>
+        </Flex>
+
+        {/* Seek Bar */}
+        <Flex direction="column" gap="small" width="100%">
+          <View
+            height="8px"
+            backgroundColor="rgba(255, 255, 255, 0.2)"
+            borderRadius="full"
+            overflow="hidden"
+          >
+            <View
+              width={`${(currentTime / duration) * 100}%`}
+              height="100%"
+              backgroundColor="white"
+            />
+          </View>
+          <Flex justifyContent="space-between">
+            <Text fontSize="small" color="white">
+              {formatTime(currentTime)}
+            </Text>
+            <Text fontSize="small" color="white">
+              {formatTime(duration)}
+            </Text>
+          </Flex>
+        </Flex>
       </Flex>
-    </Flex>
+    </View>
   );
 }

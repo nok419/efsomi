@@ -8,6 +8,7 @@ import {
   Heading,
   Card
 } from '@aws-amplify/ui-react';
+import { Song,EnvironmentalSound } from '../../../types/audio';
 
 interface ReviewRating {
   value: number;
@@ -58,14 +59,18 @@ interface ReviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ReviewData) => void;
-  currentTrack: { title: string; artist: string } | null;
+  currentTrack: Song | null;
+  nextTrack: Song | null;
+  bridgeSound: EnvironmentalSound | null;
 }
 
 export const ReviewDialog = ({
   isOpen,
   onClose,
   onSubmit,
-  currentTrack
+  currentTrack,
+  nextTrack,
+  bridgeSound
 }: ReviewDialogProps) => {
   const [ratings, setRatings] = useState({
     continuity: 4,
@@ -117,11 +122,17 @@ export const ReviewDialog = ({
         <Flex direction="column" gap="large">
           <Heading level={3}>遷移評価</Heading>
 
-          {currentTrack && (
-            <Text variation="secondary">
-              評価曲: {currentTrack.title} - {currentTrack.artist}
-            </Text>
-          )}
+          <Text variation="secondary" fontSize="small">
+              遷移前: {currentTrack?.title} - {currentTrack?.artist}
+          </Text>
+          <Text variation="secondary" fontSize="small">
+              遷移後: {nextTrack?.title} - {nextTrack?.artist}
+          </Text>
+            {bridgeSound && (
+          <Text variation="secondary" fontSize="small">
+            環境音ブリッジ: {bridgeSound.name} ({bridgeSound.category})
+          </Text>
+        )}
 
           <RatingItem
             value={ratings.continuity}
