@@ -1,3 +1,4 @@
+//インポート
 import { useState, useEffect } from 'react';
 import { Card, Grid, View } from '@aws-amplify/ui-react';
 import AudioPlayer from '../components/shared/AudioPlayer';
