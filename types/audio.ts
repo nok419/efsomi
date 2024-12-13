@@ -12,11 +12,12 @@ export interface EnvironmentalSound {
   id: string;
   name: string;
   category: 'nature' | 'urban';
-  subCategory: string;
-  path: string;
+  src: string;
   thumbnail: string;
+  subCategory: string;
   characteristics: string[];
 }
+
 
 export interface BridgeConfig {
   duration: number;
@@ -39,4 +40,25 @@ export interface SoundSelectorProps {
   sounds: EnvironmentalSound[];
   onSoundSelect: (sound: EnvironmentalSound) => void;
   selectedSoundId: string | undefined;
+}
+
+export interface ReviewData {
+  ratings: {
+    continuity: number;
+    emotional: number;
+    contextual: number;
+  };
+  additionalFeedback: {
+    wantToSkip: boolean;
+    feltDiscomfort: boolean;
+    wouldUseAgain: boolean;
+  };
+  timestamp: number;
+}
+
+export interface ReviewDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: ReviewData) => void;
+  currentTrack: { title: string; artist: string } | null;
 }

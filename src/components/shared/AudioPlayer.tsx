@@ -1,4 +1,4 @@
-import { Card, Flex, Image, Button, View ,Text} from '@aws-amplify/ui-react';
+import { Flex,  Button, View ,Text,Icon} from '@aws-amplify/ui-react';
 import { AudioPlayerProps } from '../../../types/audio';
 import { useState } from 'react';
 export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPlayerProps) {
@@ -13,69 +13,73 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
   };
 
   return (
-    <Card padding="medium">
-      <Flex direction="column" gap="medium">
-        <View 
-          height="120px"
-          backgroundColor="background.secondary" 
-          borderRadius="medium"
+    <Flex direction="column" gap="medium" padding="large">
+      {/* Track Info */}
+      <Flex direction="column" alignItems="center" gap="medium">
+        
+        <Text fontSize="xl" fontWeight="bold">{currentSong?.title}</Text>
+        <Text variation="secondary" fontSize="large">{currentSong?.artist}</Text>
+      </Flex>
+
+      {/* Controls */}
+      <Flex justifyContent="center" gap="large" alignItems="center">
+        <Button 
+          variation="link"
+          size="large"
+          fontSize="xxxl"
         >
-          {currentSong?.albumArt && (
-            <Image
-              src={currentSong.albumArt}
-              alt={currentSong.title}
-              objectFit="cover"
-              width="100%"
-              height="100%"
-            />
-          )}
-        </View>
-
-        {/* Track Info */}
-        <Flex direction="column" alignItems="center">
-          <Text fontSize="medium" fontWeight="bold">{currentSong?.title}</Text>
-          <Text variation="secondary">{currentSong?.artist}</Text>
-        </Flex>
-
-        {/* Seek Bar */}
-        <Flex direction="column" gap="xs">
-          <View 
-            position="relative" 
-            height="4px" 
-            backgroundColor="background.secondary"
-            borderRadius="full"
-          >
-            <View 
-              position="absolute"
-              height="100%"
-              width={`${(currentTime / duration) * 100}%`}
-              backgroundColor="brand.primary"
-              borderRadius="full"
-            />
-          </View>
-          <Flex justifyContent="space-between">
-            <Text fontSize="xs">{formatTime(currentTime)}</Text>
-            <Text fontSize="xs">{formatTime(duration)}</Text>
-          </Flex>
-        </Flex>
-
-        {/* Controls */}
-        <Flex justifyContent="center" gap="medium" alignItems="center">
-          <Button variation="link" size="small">⏮</Button>
-          <Button
-            size="large"
-            variation="primary"
-            borderRadius="full"
-            onClick={() => {
-              setIsPlaying(!isPlaying);
-              onPlayStateChange(!isPlaying);
-            }}
+          ⏮
+        </Button>
+        <Button
+          size="large"
+          variation="primary"
+          width="80px"
+          height="80px"
+          borderRadius="full"
+          onClick={() => {
+            setIsPlaying(!isPlaying);
+            onPlayStateChange(!isPlaying);
+          }}
+        >
+          <Icon
+            fontSize="50px"
+            ariaLabel={isPlaying ? "Pause" : "Play"}
           >
             {isPlaying ? '⏸' : '▶️'}
-          </Button>
-          <Button variation="link" size="small">⏭</Button>
+          </Icon>
+        </Button>
+        <Button 
+          variation="link"
+          size="large"
+          fontSize="xxxl"
+        >
+          ⏭
+        </Button>
+      </Flex>
+
+      {/* Seek Bar */}
+      <Flex direction="column" gap="small" width="100%">
+        <View 
+          height="8px" 
+          backgroundColor="background.tertiary"
+          borderRadius="full"
+          overflow="hidden"
+        >
+          <View 
+            width={`${(currentTime / duration) * 100}%`}
+            height="100%"
+            backgroundColor="brand.primary"
+          />
+        </View>
+        <Flex justifyContent="space-between">
+          <Text fontSize="small" variation="secondary">
+            {formatTime(currentTime)}
+          </Text>
+          <Text fontSize="small" variation="secondary">
+            {formatTime(duration)}
+          </Text>
         </Flex>
       </Flex>
-    </Card>
+    </Flex>
   );
 }

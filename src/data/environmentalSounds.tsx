@@ -1,33 +1,41 @@
-// data/environmentalSounds.ts
+// src/data/environmentalSounds.ts
 import { EnvironmentalSound } from '../../types/audio';
 
 export const environmentalSounds: EnvironmentalSound[] = [
   {
-    id: 'wave-1',
+    id: 'env1',
     name: '波の音',
     category: 'nature',
     subCategory: 'water',
-    path: '/sounds/wave-1.mp3',
-    thumbnail: '/images/wave-1-thumb.jpg',
-    characteristics: ['穏やか', '継続的']
+    characteristics: ['peaceful', 'continuous'],
+    src: '/audio/environmental/wave.mp3',
+    thumbnail: '/images/env_wave.jpg'
   },
   {
-    id: 'rain-1',
-    name: '雨音',
+    id: 'env2',
+    name: '雨の音',
     category: 'nature',
     subCategory: 'weather',
-    path: '/sounds/rain-1.mp3',
-    thumbnail: '/images/rain-1-thumb.jpg',
-    characteristics: ['静か', 'リズミカル']
+    characteristics: ['ambient', 'soothing'],
+    src: '/audio/environmental/rain.mp3',
+    thumbnail: '/images/env_rain.jpg'
   },
   {
-    id: 'cafe-1',
-    name: 'カフェ',
+    id: 'env3',
+    name: '街の喧騒',
+    category: 'urban',
+    subCategory: 'city',
+    characteristics: ['busy', 'dynamic'],
+    src: '/audio/environmental/city.mp3',
+    thumbnail: '/images/env_city.jpg'
+  },
+  {
+    id: 'env4',
+    name: 'カフェの雰囲気',
     category: 'urban',
     subCategory: 'indoor',
-    path: '/sounds/cafe-1.mp3',
-    thumbnail: '/images/cafe-1-thumb.jpg',
-    characteristics: ['にぎやか', '会話']
-  },
-  // ... 他の環境音データ
+    characteristics: ['social', 'warm'],
+    src: '/audio/environmental/cafe.mp3',
+    thumbnail: '/images/env_cafe.jpg'
+  }
 ];
