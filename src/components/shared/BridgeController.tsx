@@ -1,5 +1,5 @@
-// BridgeController.tsx
-import { Card, Flex, Text,Image} from '@aws-amplify/ui-react';
+// components/shared/BridgeController.tsx
+import { Card, Flex, Text, Image,} from '@aws-amplify/ui-react';
 import { BridgeControllerProps } from '../../../types/audio';
 
 export default function BridgeController({ 
@@ -8,32 +8,36 @@ export default function BridgeController({
   selectedSound 
 }: BridgeControllerProps) {
   return (
-    <Card padding="medium">
-      <Flex direction="column" gap="medium">
+    <Card padding="large">
+      <Flex direction="column" gap="large">
+        {/* Header */}
         <Flex justifyContent="space-between" alignItems="center">
-          <Text fontSize="large" fontWeight="bold">Bridge Control</Text>
+          <Text fontSize="xl" fontWeight="bold">Bridge Control</Text>
           {selectedSound && (
             <Flex 
               gap="small" 
               alignItems="center"
               backgroundColor="background.tertiary"
-              padding="xs"
-              borderRadius="small"
+              padding="medium"
+              borderRadius="medium"
+              width="40%"
             >
               <Image
                 src={selectedSound.thumbnail}
                 alt={selectedSound.name}
-                width="24px"
-                height="24px"
+                width="32px"
+                height="40px"
                 borderRadius="small"
+
               />
-              <Text fontSize="small">{selectedSound.name}</Text>
+              <Text fontSize="medium">{selectedSound.name}</Text>
             </Flex>
           )}
         </Flex>
 
-        <Flex direction="column" gap="small">
-          <Text>Bridge Duration ({config.duration.toFixed(1)}s)</Text>
+        {/* Bridge Duration Control */}
+        <Flex direction="column" gap="medium">
+          <Text fontSize="large">Bridge Duration ({config.duration.toFixed(1)}s)</Text>
           <input
             type="range"
             min={1}
@@ -44,12 +48,18 @@ export default function BridgeController({
               ...config,
               duration: parseFloat(e.target.value)
             })}
-            className="custom-slider"
+            style={{
+              width: '100%',
+              height: '12px',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
           />
         </Flex>
 
-        <Flex direction="column" gap="small">
-          <Text>Fade Duration ({config.fadeDuration.toFixed(1)}s)</Text>
+        {/* Fade Duration Control */}
+        <Flex direction="column" gap="medium">
+          <Text fontSize="large">Fade Duration ({config.fadeDuration.toFixed(1)}s)</Text>
           <input
             type="range"
             min={0.2}
@@ -60,7 +70,12 @@ export default function BridgeController({
               ...config,
               fadeDuration: parseFloat(e.target.value)
             })}
-            className="custom-slider"
+            style={{
+              width: '100%',
+              height: '12px',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
           />
         </Flex>
       </Flex>

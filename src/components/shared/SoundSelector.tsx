@@ -1,15 +1,11 @@
-import { Card, Flex, Button, Text } from '@aws-amplify/ui-react';
+import { Card, Flex, Button, Text, View } from '@aws-amplify/ui-react';
 import { SoundSelectorProps } from '../../../types/audio';
 import { useState } from 'react';
 
 export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorProps) {
   const [soundMenuType, setSoundMenuType] = useState<'nature' | 'urban' | null>(null);
-  const [menuPosition, setMenuPosition] = useState({ left: 0 });
 
-  const handleMenuOpen = (type: 'nature' | 'urban', event: React.MouseEvent) => {
-    const button = event.currentTarget as HTMLElement;
-    const rect = button.getBoundingClientRect();
-    setMenuPosition({ left: rect.left });
+  const handleMenuOpen = (type: 'nature' | 'urban') => {
     setSoundMenuType(soundMenuType === type ? null : type);
   };
 
@@ -18,30 +14,37 @@ export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorPr
       <Flex direction="column" gap="medium">
         <Text fontSize="large" fontWeight="bold">Environmental Sound</Text>
         
-        <Flex gap="small" position="relative">
-          <Button
-            flex={1}
-            backgroundColor={soundMenuType === 'nature' ? 'brand.primary' : 'background.secondary'}
-            onClick={(e) => handleMenuOpen('nature', e)}
-          >
-            自然音
-          </Button>
-          <Button
-            flex={1}
-            backgroundColor={soundMenuType === 'urban' ? 'brand.primary' : 'background.secondary'}
-            onClick={(e) => handleMenuOpen('urban', e)}
-          >
-            都市音
-          </Button>
+        <View position="relative">
+          <Flex gap="small">
+            <Button
+              flex={1}
+              backgroundColor={soundMenuType === 'nature' ? 'brand.primary' : 'background.secondary'}
+              onClick={() => handleMenuOpen('nature')}
+            >
+              自然音
+            </Button>
+            <Button
+              flex={1}
+              backgroundColor={soundMenuType === 'urban' ? 'brand.primary' : 'background.secondary'}
+              onClick={() => handleMenuOpen('urban')}
+            >
+              都市音
+            </Button>
+          </Flex>
 
           {soundMenuType && (
             <Card
               position="absolute"
-              style={{ left: menuPosition.left }}
               top="100%"
-              width="200px"
-              marginTop="xxs"
+              left="0"
+              right="0"
+              marginTop="2px"
               padding="zero"
+              style={{ zIndex: 10 }}
+              backgroundColor="background.primary"
+              borderWidth="1px"
+              borderStyle="solid"
+              borderColor="border.primary"
             >
               {sounds
                 .filter(sound => sound.category === soundMenuType)
@@ -62,7 +65,7 @@ export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorPr
                 ))}
             </Card>
           )}
-        </Flex>
+        </View>
       </Flex>
     </Card>
   );
