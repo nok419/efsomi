@@ -1,14 +1,14 @@
-// components/shared/ReviewDialog.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   View,
   Flex,
   Text,
   Button,
   Heading,
-  Card
+  Card,
+  SliderField,
+  Divider
 } from '@aws-amplify/ui-react';
-import { Song,EnvironmentalSound } from '../../../types/audio';
 
 interface ReviewRating {
   value: number;
@@ -17,29 +17,61 @@ interface ReviewRating {
   description?: string;
 }
 
-const RatingItem = ({ value, onChange, label, description }: ReviewRating) => (
-  <Flex direction="column" gap="small">
-    <Text fontSize="medium">{label}</Text>
-    {description && (
-      <Text variation="secondary" fontSize="small">
-        {description}
-      </Text>
-    )}
-    <Flex gap="small" wrap="wrap">
-      {[1, 2, 3, 4, 5, 6, 7].map((rating) => (
-        <Button
-          key={rating}
-          variation={value === rating ? "primary" : "link"}  // "default"を"link"に変更
-          onClick={() => onChange(rating)}
-          padding="medium"
-          size="large"
+const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => {
+  // 値が正しく更新されていることを確認
+  useEffect(() => {
+    console.log(`Rating changed for ${label}: ${value}`);
+  }, [value, label]);
+
+  return (
+    <Flex direction="column" gap="xs">
+      <Text fontSize="medium">{label}</Text>
+      {description && (
+        <Text variation="secondary" fontSize="small">
+          {description}
+        </Text>
+      )}
+      <View width="100%" paddingTop="xs" position="relative">
+        {/* スライダーのティックマーク */}
+        <Flex
+          position="absolute"
+          width="100%"
+          justifyContent="space-between"
+          padding="2px"
+          top="12px"
+          style={{ pointerEvents: 'none' }}
         >
-          {rating}
-        </Button>
-      ))}
+          {[...Array(7)].map((_, i) => (
+            <View
+              key={i}
+              width="1px"
+              height="8px"
+              backgroundColor="border.primary"
+            />
+          ))}
+        </Flex>
+        
+        {/* スライダー本体 */}
+        <SliderField
+          label={`評価値: ${value}`}
+          labelHidden
+          value={value}
+          onChange={(e) => onChange(Number(e))}
+          min={1}
+          max={7}
+          step={1}
+          size="small"
+        />
+        
+        {/* 端点の数値表示 */}
+        <Flex justifyContent="space-between" padding="2px" marginTop="4px">
+          <Text fontSize="xs">1</Text>
+          <Text fontSize="xs">7</Text>
+        </Flex>
+      </View>
     </Flex>
-  </Flex>
-);
+  );
+};
 
 interface ReviewData {
   ratings: {
@@ -59,9 +91,9 @@ interface ReviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ReviewData) => void;
-  currentTrack: Song | null;
-  nextTrack: Song | null;
-  bridgeSound: EnvironmentalSound | null;
+  currentTrack: { title: string; artist: string } | null;
+  nextTrack: { title: string; artist: string } | null;
+  bridgeSound: { name: string; category: string } | null;
 }
 
 export const ReviewDialog = ({
@@ -85,6 +117,8 @@ export const ReviewDialog = ({
   });
 
   const handleSubmit = () => {
+    // 送信前に値の検証
+    console.log('Submitting ratings:', ratings);
     onSubmit({
       ratings,
       additionalFeedback,
@@ -112,90 +146,114 @@ export const ReviewDialog = ({
     >
       <Card
         backgroundColor="white"
-        padding="xl"
+        padding="medium"
         borderRadius="medium"
         width="90%"
-        maxWidth="600px"
+        maxWidth="500px"
         maxHeight="90vh"
         overflow="auto"
       >
-        <Flex direction="column" gap="large">
-          <Heading level={3}>遷移評価</Heading>
+        <Flex direction="column" gap="medium">
+          <Heading level={4} padding="xs">遷移評価</Heading>
 
-          <Text variation="secondary" fontSize="small">
-              遷移前: {currentTrack?.title} - {currentTrack?.artist}
-          </Text>
-          <Text variation="secondary" fontSize="small">
-              遷移後: {nextTrack?.title} - {nextTrack?.artist}
-          </Text>
-            {bridgeSound && (
-          <Text variation="secondary" fontSize="small">
-            環境音ブリッジ: {bridgeSound.name} ({bridgeSound.category})
-          </Text>
-        )}
-
-          <RatingItem
-            value={ratings.continuity}
-            onChange={(value) => setRatings(prev => ({...prev, continuity: value}))}
-            label="音楽の流れの自然さ"
-            description="1: 非常に不自然 - 7: 非常に自然"
-          />
-
-          <RatingItem
-            value={ratings.emotional}
-            onChange={(value) => setRatings(prev => ({...prev, emotional: value}))}
-            label="感情の繋がり"
-            description="1: 不連続 - 7: スムーズな連続性"
-          />
-
-          <RatingItem
-            value={ratings.contextual}
-            onChange={(value) => setRatings(prev => ({...prev, contextual: value}))}
-            label="環境音の適切さ"
-            description="1: 不適切 - 7: 非常に適切"
-          />
-
-          <Flex direction="column" gap="medium">
-            {Object.entries({
-              wantToSkip: "この遷移はスキップしたいと感じた",
-              feltDiscomfort: "違和感を覚えた",
-              wouldUseAgain: "この環境音をまた使いたい"
-            }).map(([key, label]) => (
-              <View 
-                key={key} 
-                onClick={() => 
-                  setAdditionalFeedback(prev => ({
-                    ...prev,
-                    [key]: !prev[key as keyof typeof additionalFeedback]
-                  }))
-                }
-                style={{ cursor: 'pointer' }}
-              >
-                <Flex alignItems="center" gap="small">
-                  <View
-                    width="20px"
-                    height="20px"
-                    backgroundColor={
-                      additionalFeedback[key as keyof typeof additionalFeedback] 
-                        ? 'brand.primary' 
-                        : 'white'
-                    }
-                    borderRadius="small"
-                    borderWidth="1px"
-                    borderStyle="solid"
-                    borderColor="border.primary"
-                  />
-                  <Text>{label}</Text>
-                </Flex>
+          {/* 遷移情報の表示 */}
+          <Card variation="elevated" padding="xs">
+            <Flex direction="column" gap="xs">
+              <View>
+                <Text fontWeight="bold" fontSize="small">遷移前</Text>
+                <Text variation="secondary" fontSize="small">
+                  {currentTrack?.title} - {currentTrack?.artist}
+                </Text>
               </View>
-            ))}
+              
+              <View>
+                <Text fontWeight="bold" fontSize="small">環境音</Text>
+                <Text variation="secondary" fontSize="small">
+                  {bridgeSound?.name} ({bridgeSound?.category})
+                </Text>
+              </View>
+
+              <View>
+                <Text fontWeight="bold" fontSize="small">遷移後</Text>
+                <Text variation="secondary" fontSize="small">
+                  {nextTrack?.title} - {nextTrack?.artist}
+                </Text>
+              </View>
+            </Flex>
+          </Card>
+
+          <Divider />
+
+          {/* 評価スライダー */}
+          <Flex direction="column" gap="medium">
+            <RatingSlider
+              value={ratings.continuity}
+              onChange={(value) => setRatings(prev => ({...prev, continuity: value}))}
+              label="音楽の流れの自然さ"
+              description="遷移の滑らかさを評価してください"
+            />
+
+            <RatingSlider
+              value={ratings.emotional}
+              onChange={(value) => setRatings(prev => ({...prev, emotional: value}))}
+              label="感情の繋がり"
+              description="曲想の連続性を評価してください"
+            />
+
+            <RatingSlider
+              value={ratings.contextual}
+              onChange={(value) => setRatings(prev => ({...prev, contextual: value}))}
+              label="環境音の適切さ"
+              description="環境音の選択が適切か評価してください"
+            />
           </Flex>
 
-          <Flex direction="row" gap="medium" justifyContent="flex-end">
-            <Button onClick={onClose} variation="link">
+          <Divider />
+
+          {/* 補足評価 */}
+          <Card padding="xs">
+            <Flex direction="column" gap="xs">
+              {Object.entries({
+                wantToSkip: "スキップしたいと感じた",
+                feltDiscomfort: "違和感を覚えた",
+                wouldUseAgain: "この環境音をまた使いたい"
+              }).map(([key, label]) => (
+                <View 
+                  key={key} 
+                  onClick={() => 
+                    setAdditionalFeedback(prev => ({
+                      ...prev,
+                      [key]: !prev[key as keyof typeof additionalFeedback]
+                    }))
+                  }
+                  style={{ cursor: 'pointer' }}
+                >
+                  <Flex alignItems="center" gap="xs">
+                    <View
+                      width="16px"
+                      height="16px"
+                      backgroundColor={
+                        additionalFeedback[key as keyof typeof additionalFeedback] 
+                          ? 'brand.primary.80' 
+                          : 'white'
+                      }
+                      borderRadius="small"
+                      borderWidth="1px"
+                      borderStyle="solid"
+                      borderColor="border.primary"
+                    />
+                    <Text fontSize="small">{label}</Text>
+                  </Flex>
+                </View>
+              ))}
+            </Flex>
+          </Card>
+
+          <Flex direction="row" gap="small" justifyContent="flex-end">
+            <Button onClick={onClose} variation="link" size="small">
               キャンセル
             </Button>
-            <Button onClick={handleSubmit} variation="primary">
+            <Button onClick={handleSubmit} variation="primary" size="small">
               送信
             </Button>
           </Flex>
