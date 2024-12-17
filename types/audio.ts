@@ -5,17 +5,16 @@ export interface Song {
   artist: string;
   path: string;
   albumArt?: string;
-  duration?: number;
 }
 
 export interface EnvironmentalSound {
   id: string;
   name: string;
   category: 'nature' | 'urban';
-  src: string;
-  thumbnail: string;
-  subCategory: string;
+  subCategory?: string;
   characteristics: string[];
+  src: string;
+  thumbnail?: string;
 }
 
 export interface BridgeConfig {
@@ -24,39 +23,25 @@ export interface BridgeConfig {
   environmentalSoundId: string;
 }
 
-export interface AudioPlayerProps {
-  currentSong: Song | null;
-  onPlayStateChange: (isPlaying: boolean) => void;
-  onNextTrack?: () => void;  // 追加: 次の曲への遷移
-  onPreviousTrack?: () => void;  // 追加: 前の曲への遷移
-}
-
-export interface BridgeControllerProps {  // 追加: BridgeController用の型定義
-  config: BridgeConfig;
-  onConfigChange: (config: BridgeConfig) => void;
-  selectedSound: EnvironmentalSound | null;
-}
-
-export interface SoundSelectorProps {
-  sounds: EnvironmentalSound[];
-  onSoundSelect: (sound: EnvironmentalSound) => void;
-  selectedSoundId?: string;
-}
-
-export interface MusicSelectorProps {  // 追加: MusicSelector用の型定義
-  presetSongs: Song[];
-  onSongSelect: (song: Song) => void;
-  onPlaylistLoad: (url: string) => void;
-  selectedSong: Song | null;
-}
-
-export interface ReviewDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: ReviewData) => void;
-  currentTrack: Song | null;
-  nextTrack: Song | null;
-  bridgeSound: EnvironmentalSound | null;
+// 実験データ関連の型定義を追加
+export interface TransitionEvent {
+  eventId: string;
+  sessionId: string;
+  timestamp: string;
+  fromTrack: {
+    trackId: string;
+    title: string;
+  };
+  toTrack: {
+    trackId: string;
+    title: string;
+  };
+  bridge: {
+    soundId: string;
+    name: string;
+    type: 'environmental' | 'whitenoise';
+    config: BridgeConfig;
+  };
 }
 
 export interface ReviewData {
@@ -73,34 +58,53 @@ export interface ReviewData {
   timestamp: number;
 }
 
-// 追加: 再生状態管理用の型定義
-export interface PlaybackState {
-  isPlaying: boolean;
-  currentTime: number;
-  duration: number;
-}
-
-// 追加: オーディオエンジン用の型定義
-export interface AudioEngineConfig {
-  crossFadeDuration: number;
-  environmentalSoundGain: number;
-  masterVolume: number;
-}
-
-// 追加: 実験セッション用の型定義
 export interface ExperimentSession {
   sessionId: string;
-  startTime: number;
-  userId: string;
+  startTime: string;
+  endTime?: string;
   transitions: TransitionEvent[];
+  reviews: ReviewData[];
 }
 
-export interface TransitionEvent {
-  id: string;
-  timestamp: number;
-  fromSong: Song;
-  toSong: Song;
-  bridgeSound: EnvironmentalSound;
-  bridgeConfig: BridgeConfig;
-  review: ReviewData;
+// コンポーネントProps型定義
+export interface AudioPlayerProps {
+  currentSong: Song | null;
+  onPlayStateChange: (isPlaying: boolean) => void;
 }
+
+export interface BridgeControllerProps {
+  config: BridgeConfig;
+  onConfigChange: (config: BridgeConfig) => void;
+  selectedSound: EnvironmentalSound | null;
+}
+
+export interface SoundSelectorProps {
+  sounds: EnvironmentalSound[];
+  onSoundSelect: (sound: EnvironmentalSound) => void;
+  selectedSoundId?: string;
+}
+
+// 音声処理関連のエラー型
+export class AudioLoadError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AudioLoadError';
+  }
+}
+
+export class PlaybackError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PlaybackError';
+  }
+}
+
+// パフォーマンス設定
+export const AUDIO_CONFIG = {
+  sampleRate: 44100,
+  bitDepth: 16,
+  channels: 2,
+  maxLatency: 100, // ms
+  transitionLatency: 50, // ms
+  bufferSize: 2048,
+} as const;
