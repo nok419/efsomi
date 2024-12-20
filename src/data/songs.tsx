@@ -4,24 +4,17 @@ import { Song } from '../../types/audio';
 export const songs: Song[] = [
   {
     id: 'song1',
-    title: 'Peaceful Morning',
+    title: 'test1',
     artist: 'Test Artist 1',
-    path: '/audio/songs/peaceful_morning.mp3',
-    albumArt: '/images/album_peaceful.jpg'
+    path: '/audio/11.mp3',
+    albumArt: '/images/11.jpg'
   },
   {
     id: 'song2',
-    title: 'Urban Night',
+    title: 'test2',
     artist: 'Test Artist 2',
-    path: '/audio/songs/urban_night.mp3',
-    albumArt: '/images/album_urban.jpg'
+    path: '/audio/22.mp3',
+    albumArt: '/images/22.jpg'
   },
-  {
-    id: 'song3',
-    title: 'Nature Walk',
-    artist: 'Test Artist 3',
-    path: '/audio/songs/nature_walk.mp3',
-    albumArt: '/images/album_nature.jpg'
-  }
 ];
 

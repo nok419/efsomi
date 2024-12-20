@@ -9,7 +9,7 @@ export const environmentalSounds: EnvironmentalSound[] = [
     subCategory: 'water',
     characteristics: ['peaceful', 'continuous'],
     src: '/audio/environmental/wave.mp3',
-    thumbnail: '/images/env_wave.jpg'
+    thumbnail: '/images/s.jpg'
   },
   {
     id: 'env2',
@@ -18,7 +18,7 @@ export const environmentalSounds: EnvironmentalSound[] = [
     subCategory: 'weather',
     characteristics: ['ambient', 'soothing'],
     src: '/audio/environmental/rain.mp3',
-    thumbnail: '/images/env_rain.jpg'
+    thumbnail: '/images/r.jpg'
   },
   {
     id: 'env3',
@@ -27,7 +27,7 @@ export const environmentalSounds: EnvironmentalSound[] = [
     subCategory: 'city',
     characteristics: ['busy', 'dynamic'],
     src: '/audio/environmental/city.mp3',
-    thumbnail: '/images/env_city.jpg'
+    thumbnail: '/images/c.jpg'
   },
   {
     id: 'env4',
@@ -36,6 +36,6 @@ export const environmentalSounds: EnvironmentalSound[] = [
     subCategory: 'indoor',
     characteristics: ['social', 'warm'],
     src: '/audio/environmental/cafe.mp3',
-    thumbnail: '/images/env_cafe.jpg'
+    thumbnail: '/images/ca.jpg'
   }
 ];
