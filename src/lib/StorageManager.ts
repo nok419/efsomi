@@ -1,5 +1,5 @@
 // src/lib/audio/StorageManager.ts
-import { Storage } from 'aws-amplify/storage';
+import { getUrl } from 'aws-amplify/storage';
 import { AudioLoadError } from '../../types/audio';
 
 export class StorageManager {
@@ -17,20 +17,29 @@ export class StorageManager {
 
   async getAudioUrl(key: string): Promise<string> {
     try {
-      // キャッシュをチェック
+      // Check cache first
       const cached = this.urlCache.get(key);
       if (cached) return cached;
 
-      // S3から署名付きURLを取得
-      const url = await Storage.get(key, {
-        validateObjectExistence: true,
-        expiresIn: 3600 // 1時間
+      // Get signed URL from S3
+      const { url } = await getUrl({
+        key,
+        options: {
+          validateObjectExistence: true,
+          expiresIn: 3600 // 1 hour
+        }
       });
 
-      this.urlCache.set(key, url);
-      return url;
+      if (!url) {
+        throw new Error('Failed to get URL');
+      }
+
+      const urlString = url.toString();
+      this.urlCache.set(key, urlString);
+      return urlString;
+
     } catch (error) {
-      throw new AudioLoadError(`Failed to get audio URL for ${key}: ${error}`);
+      throw new AudioLoadError(`Failed to get audio URL for ${key}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
