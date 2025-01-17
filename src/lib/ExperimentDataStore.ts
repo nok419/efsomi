@@ -190,4 +190,35 @@ export class ExperimentDataStore {
 
     return JSON.stringify(sessionData);
   }
+
+  async saveTransitionReviewData(
+    currentTrack: { title: string; artist: string },
+    nextTrack: { title: string; artist: string },
+    bridgeSound: { name: string; category: string },
+    reviewData: ReviewData
+  ): Promise<void> {
+    if (!this.currentSession) {
+      throw new Error('No active session');
+    }
+
+    const transitionReviewData = {
+      currentTrack,
+      nextTrack,
+      bridgeSound,
+      reviewData,
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      await this.retry(() => 
+        DataStore.save({
+          ...transitionReviewData,
+          sessionId: this.currentSession!.sessionId
+        })
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to save transition review data: ${message}`);
+    }
+  }
 }

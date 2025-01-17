@@ -16,6 +16,7 @@ export class AudioEngine {
   private bufferCache: Map<string, AudioBuffer> = new Map();
   private urlCache: Map<string, string> = new Map();
   private isInitialized = false;
+  onTrackEnd: (() => void) | null = null;
 
   constructor() {
     this.context = new AudioContext();
@@ -123,6 +124,11 @@ export class AudioEngine {
       const node = this.createAudioNode(buffer);
       node.startTime = this.context.currentTime;
       node.source.start();
+      node.source.onended = () => {
+        if (this.onTrackEnd) {
+          this.onTrackEnd();
+        }
+      };
       this.currentTrack = node;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -141,7 +147,6 @@ export class AudioEngine {
       const node = this.createAudioNode(buffer);
       node.startTime = this.context.currentTime;
       node.source.start();
-      this.currentTrack = node;
     } catch (error: unknown) {
         if (error instanceof Error) {
           throw new AudioLoadError(error.message);
@@ -207,7 +212,7 @@ export class AudioEngine {
     }
   }
 
-  private async stopCurrent(): Promise<void> {
+  async stopCurrent(): Promise<void> { // プライベートからパブリックに変更
     if (this.currentTrack?.startTime) {
       try {
         this.currentTrack.source.stop();

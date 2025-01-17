@@ -1,46 +1,12 @@
-<<<<<<< HEAD
-=======
 // src/components/shared/AudioPlayer.tsx
 import { useEffect, useCallback, useRef, useState } from 'react';
->>>>>>> 870b0701c8d440ed4529140f847bf19e9d9ffbd8
 import { Flex, Button, View, Text, Icon } from '@aws-amplify/ui-react';
 import { AudioEngine } from '../../lib/AudioEngine';
 import { AudioPlayerProps } from '../../../types/audio';
-<<<<<<< HEAD
-import { useState, useEffect } from 'react';
-=======
->>>>>>> 870b0701c8d440ed4529140f847bf19e9d9ffbd8
 
-export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPlayerProps) {
+export default function AudioPlayer({ currentSong, onPlayStateChange, onTrackEnd }: AudioPlayerProps) {
   const audioEngineRef = useRef<AudioEngine | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-<<<<<<< HEAD
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
-  const [currentTime, setCurrentTime] = useState(0);
-  const duration = audio?.duration || 240; // 仮の曲の長さ（秒）
-
-  useEffect(() => {
-    if (currentSong) {
-      const newAudio = new Audio(currentSong.path);
-      setAudio(newAudio);
-      newAudio.addEventListener('timeupdate', () => setCurrentTime(newAudio.currentTime));
-      return () => {
-        newAudio.pause();
-        newAudio.removeEventListener('timeupdate', () => setCurrentTime(newAudio.currentTime));
-      };
-    }
-  }, [currentSong]);
-
-  useEffect(() => {
-    if (audio) {
-      if (isPlaying) {
-        audio.play();
-      } else {
-        audio.pause();
-      }
-    }
-  }, [isPlaying, audio]);
-=======
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const animationFrameRef = useRef<number>();
@@ -119,6 +85,25 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
     };
   }, [isPlaying]);
 
+  useEffect(() => {
+    const handleTrackEnd = () => {
+      if (audioEngineRef.current) {
+        audioEngineRef.current.stopCurrent();
+        onTrackEnd();
+      }
+    };
+
+    if (audioEngineRef.current) {
+      audioEngineRef.current.onTrackEnd = handleTrackEnd;
+    }
+
+    return () => {
+      if (audioEngineRef.current) {
+        audioEngineRef.current.onTrackEnd = null;
+      }
+    };
+  }, [onTrackEnd]);
+
   const handlePlayPause = async () => {
     if (!audioEngineRef.current) return;
 
@@ -131,7 +116,6 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
     setIsPlaying(!isPlaying);
     onPlayStateChange(!isPlaying);
   };
->>>>>>> 870b0701c8d440ed4529140f847bf19e9d9ffbd8
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

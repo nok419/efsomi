@@ -9,6 +9,8 @@ import { loadSongs } from './data/songs';
 import { loadEnvironmentalSounds } from './data/environmentalSounds';
 import MusicSelector from './components/shared/MusicSelector';
 import { ReviewDialog } from './components/shared/ReviewDialog';
+import { ExperimentDataStore } from './lib/ExperimentDataStore'; // 追加
+import { AudioEngine } from './lib/AudioEngine'; // 追加
 import '@aws-amplify/ui-react/styles.css';
 
 const theme = {
@@ -84,8 +86,42 @@ export default function App() {
     environmentalSoundId: ''
   });
 
-  const handleReviewSubmit = (data: ReviewData) => {
-    console.log('Review submitted:', data);
+  const handleTrackEnd = async () => {
+    if (!currentSong || !nextSong || !selectedSound) return;
+
+    try {
+      const audioEngine = new AudioEngine();
+      await audioEngine.initialize();
+      const nextBuffer = await audioEngine.loadAudioFromStorage(nextSong.path);
+      const bridgeBuffer = await audioEngine.loadAudioFromStorage(selectedSound.src);
+
+      await audioEngine.performTransition(nextBuffer, bridgeBuffer, bridgeConfig);
+
+      setCurrentSong(nextSong);
+      const nextIndex = songs.indexOf(nextSong) + 1;
+      setNextSong(songs[nextIndex % songs.length]);
+
+      setIsReviewOpen(true);
+    } catch (error) {
+      console.error('Failed to perform transition:', error);
+    }
+  };
+
+  const handleReviewSubmit = async (data: ReviewData) => {
+    if (!currentSong || !nextSong || !selectedSound) return;
+
+    try {
+      const experimentDataStore = new ExperimentDataStore();
+      await experimentDataStore.saveTransitionReviewData(
+        { title: currentSong.title, artist: currentSong.artist },
+        { title: nextSong.title, artist: nextSong.artist },
+        { name: selectedSound.name, category: selectedSound.category },
+        data
+      );
+    } catch (error) {
+      console.error('Failed to save review data:', error);
+    }
+
     setIsReviewOpen(false);
   };
 
@@ -148,6 +184,7 @@ export default function App() {
                 onPlayStateChange={(isPlaying) => {
                   console.log('Playback state:', isPlaying);
                 }}
+                onTrackEnd={handleTrackEnd}
               />
               
               <Button

@@ -70,6 +70,7 @@ export interface ExperimentSession {
 export interface AudioPlayerProps {
   currentSong: Song | null;
   onPlayStateChange: (isPlaying: boolean) => void;
+  onTrackEnd: () => void; // 追加
 }
 
 export interface BridgeControllerProps {
