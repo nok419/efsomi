@@ -1,12 +1,34 @@
-// components/shared/AudioPlayer.tsx
 import { Flex, Button, View, Text, Icon } from '@aws-amplify/ui-react';
 import { AudioPlayerProps } from '../../../types/audio';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime] = useState(0);
-  const duration = 240; // 仮の曲の長さ（秒）
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const duration = audio?.duration || 240; // 仮の曲の長さ（秒）
+
+  useEffect(() => {
+    if (currentSong) {
+      const newAudio = new Audio(currentSong.path);
+      setAudio(newAudio);
+      newAudio.addEventListener('timeupdate', () => setCurrentTime(newAudio.currentTime));
+      return () => {
+        newAudio.pause();
+        newAudio.removeEventListener('timeupdate', () => setCurrentTime(newAudio.currentTime));
+      };
+    }
+  }, [currentSong]);
+
+  useEffect(() => {
+    if (audio) {
+      if (isPlaying) {
+        audio.play();
+      } else {
+        audio.pause();
+      }
+    }
+  }, [isPlaying, audio]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

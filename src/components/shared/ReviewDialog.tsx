@@ -18,7 +18,6 @@ interface ReviewRating {
 }
 
 const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => {
-  // 値が正しく更新されていることを確認
   useEffect(() => {
     console.log(`Rating changed for ${label}: ${value}`);
   }, [value, label]);
@@ -32,7 +31,6 @@ const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => 
         </Text>
       )}
       <View width="100%" paddingTop="xs" position="relative">
-        {/* スライダーのティックマーク */}
         <Flex
           position="absolute"
           width="100%"
@@ -50,8 +48,6 @@ const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => 
             />
           ))}
         </Flex>
-        
-        {/* スライダー本体 */}
         <SliderField
           label={`評価値: ${value}`}
           labelHidden
@@ -62,8 +58,6 @@ const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => 
           step={1}
           size="small"
         />
-        
-        {/* 端点の数値表示 */}
         <Flex justifyContent="space-between" padding="2px" marginTop="4px">
           <Text fontSize="xs">1</Text>
           <Text fontSize="xs">7</Text>
@@ -117,8 +111,6 @@ export const ReviewDialog = ({
   });
 
   const handleSubmit = () => {
-    // 送信前に値の検証
-    console.log('Submitting ratings:', ratings);
     onSubmit({
       ratings,
       additionalFeedback,
@@ -156,7 +148,6 @@ export const ReviewDialog = ({
         <Flex direction="column" gap="medium">
           <Heading level={4} padding="xs">遷移評価</Heading>
 
-          {/* 遷移情報の表示 */}
           <Card variation="elevated" padding="xs">
             <Flex direction="column" gap="xs">
               <View>
@@ -165,14 +156,12 @@ export const ReviewDialog = ({
                   {currentTrack?.title} - {currentTrack?.artist}
                 </Text>
               </View>
-              
               <View>
                 <Text fontWeight="bold" fontSize="small">環境音</Text>
                 <Text variation="secondary" fontSize="small">
                   {bridgeSound?.name} ({bridgeSound?.category})
                 </Text>
               </View>
-
               <View>
                 <Text fontWeight="bold" fontSize="small">遷移後</Text>
                 <Text variation="secondary" fontSize="small">
@@ -184,7 +173,6 @@ export const ReviewDialog = ({
 
           <Divider />
 
-          {/* 評価スライダー */}
           <Flex direction="column" gap="medium">
             <RatingSlider
               value={ratings.continuity}
@@ -192,14 +180,12 @@ export const ReviewDialog = ({
               label="音楽の流れの自然さ"
               description="遷移の滑らかさを評価してください"
             />
-
             <RatingSlider
               value={ratings.emotional}
               onChange={(value) => setRatings(prev => ({...prev, emotional: value}))}
               label="感情の繋がり"
               description="曲想の連続性を評価してください"
             />
-
             <RatingSlider
               value={ratings.contextual}
               onChange={(value) => setRatings(prev => ({...prev, contextual: value}))}
@@ -210,7 +196,6 @@ export const ReviewDialog = ({
 
           <Divider />
 
-          {/* 補足評価 */}
           <Card padding="xs">
             <Flex direction="column" gap="xs">
               {Object.entries({

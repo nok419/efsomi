@@ -92,6 +92,24 @@ export class AudioEngine {
       }
   }
 
+  async playTrack(buffer: AudioBuffer): Promise<void> {
+    this.checkInitialization();
+    
+    try {
+      await this.stopCurrent();
+      
+      const node = this.createAudioNode(buffer);
+      node.startTime = this.context.currentTime;
+      node.source.start();
+      this.currentTrack = node;
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+          throw new AudioLoadError(error.message);
+        }
+        throw new AudioLoadError('Unknown error occurred');
+      }
+  }
+
   async performTransition(
     nextBuffer: AudioBuffer,
     bridgeBuffer: AudioBuffer,
@@ -201,5 +219,4 @@ export class AudioEngine {
   getBridgeSound(): AudioNode | null {
     return this.bridgeSound;
   }
-  
 }

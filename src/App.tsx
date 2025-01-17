@@ -5,12 +5,11 @@ import AudioPlayer from './components/shared/AudioPlayer';
 import SoundSelector from './components/shared/SoundSelector';
 import BridgeController from './components/shared/BridgeController';
 import { Song, EnvironmentalSound, BridgeConfig, ReviewData } from '../types/audio';
-import { songs } from './data/songs';
-import { environmentalSounds } from './data/environmentalSounds';
+import { loadSongs } from './data/songs';
+import { loadEnvironmentalSounds } from './data/environmentalSounds';
 import MusicSelector from './components/shared/MusicSelector';
 import { ReviewDialog } from './components/shared/ReviewDialog';
 import '@aws-amplify/ui-react/styles.css';
-
 
 const theme = {
   name: 'efsomi-theme',
@@ -72,8 +71,9 @@ const theme = {
   }
 };
 
-
 export default function App() {
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [environmentalSounds, setEnvironmentalSounds] = useState<EnvironmentalSound[]>([]);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [nextSong, setNextSong] = useState<Song | null>(null);
   const [selectedSound, setSelectedSound] = useState<EnvironmentalSound | null>(null);
@@ -90,13 +90,23 @@ export default function App() {
   };
 
   useEffect(() => {
+    const fetchData = async () => {
+      const loadedSongs = await loadSongs();
+      const loadedEnvironmentalSounds = await loadEnvironmentalSounds();
+      setSongs(loadedSongs);
+      setEnvironmentalSounds(loadedEnvironmentalSounds);
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
     if (songs.length > 0) {
       setCurrentSong(songs[0]);
       if (songs.length > 1) {
         setNextSong(songs[1]);
       }
     }
-  }, []);
+  }, [songs]);
 
   useEffect(() => {
     if (nextSong) {
@@ -130,9 +140,6 @@ export default function App() {
               presetSongs={songs}
               onSongSelect={setNextSong}
               selectedSong={nextSong}
-              onPlaylistLoad={(url) => {
-                console.log('Loading playlist:', url);
-              }}
             />
 
             <Card>

@@ -56,7 +56,7 @@ export class ExperimentDataStore {
       }
   }
 
-  async logTransition(event: Omit<TransitionEvent, 'eventId' | 'sessionId'>): Promise<string> {
+  async logTransition(event: Omit<TransitionEvent, 'eventId' | 'sessionId' | 'timestamp'>): Promise<string> {
     if (!this.currentSession) {
       throw new Error('No active session');
     }
@@ -64,7 +64,10 @@ export class ExperimentDataStore {
     const transitionEvent: TransitionEvent = {
       eventId: `transition_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       sessionId: this.currentSession.sessionId,
-      ...event
+      timestamp: new Date().toISOString(),
+      fromTrack: event.fromTrack,
+      toTrack: event.toTrack,
+      bridge: event.bridge
     };
 
     try {
@@ -78,7 +81,7 @@ export class ExperimentDataStore {
       return transitionEvent.eventId;
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error occurred';
-        throw new Error(`Failed to [operation name]: ${message}`);
+        throw new Error(`Failed to log transition: ${message}`);
       }
   }
 

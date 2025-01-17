@@ -1,5 +1,5 @@
 // components/shared/BridgeController.tsx
-import { Card, Flex, Text, Image,} from '@aws-amplify/ui-react';
+import { Card, Flex, Text, Image } from '@aws-amplify/ui-react';
 import { BridgeControllerProps } from '../../../types/audio';
 
 export default function BridgeController({ 
@@ -28,7 +28,6 @@ export default function BridgeController({
                 width="32px"
                 height="40px"
                 borderRadius="small"
-
               />
               <Text fontSize="medium">{selectedSound.name}</Text>
             </Flex>

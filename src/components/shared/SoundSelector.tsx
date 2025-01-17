@@ -2,7 +2,7 @@ import { Card, Flex, Button, Text, View } from '@aws-amplify/ui-react';
 import { SoundSelectorProps } from '../../../types/audio';
 import { useState } from 'react';
 
-export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorProps) {
+export default function SoundSelector({ sounds, onSoundSelect, selectedSoundId }: SoundSelectorProps) {
   const [soundMenuType, setSoundMenuType] = useState<'nature' | 'urban' | null>(null);
 
   const handleMenuOpen = (type: 'nature' | 'urban') => {
@@ -40,7 +40,7 @@ export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorPr
               right="0"
               marginTop="2px"
               padding="zero"
-              style={{ zIndex: 10 }}
+              style={{ zIndex: 1000 }} // zIndexを1000に変更
               backgroundColor="background.primary"
               borderWidth="1px"
               borderStyle="solid"
@@ -59,6 +59,7 @@ export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorPr
                       onSoundSelect(sound);
                       setSoundMenuType(null);
                     }}
+                    backgroundColor={selectedSoundId === sound.id ? 'background.tertiary' : undefined}
                   >
                     {sound.name}
                   </Button>

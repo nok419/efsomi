@@ -5,24 +5,20 @@ import { Song } from '../../../types/audio';
 interface MusicSelectorProps {
   presetSongs: Song[];
   onSongSelect: (song: Song) => void;
-  onPlaylistLoad: (url: string) => void;
-  selectedSong: Song | null; // 追加
+  selectedSong: Song | null;
 }
 
 export default function MusicSelector({ 
   presetSongs, 
   onSongSelect, 
-  onPlaylistLoad,
   selectedSong 
 }: MusicSelectorProps) {
-  const [playlistUrl, setPlaylistUrl] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
     <Card padding="medium">
       <Text fontSize="large" fontWeight="bold">Music Selection</Text>
       <Flex gap="medium" direction={{ base: 'column', medium: 'row' }}>
-        {/* Preset Music Section */}
         <View flex={1}>
           <Text fontWeight="semibold" marginBottom="small">
             プリセット音楽
@@ -40,7 +36,7 @@ export default function MusicSelector({
                 width="100%"
                 padding="zero"
                 className="dropdown-menu"
-                style={{ marginTop: '4px', zIndex: 100 }}
+                style={{ marginTop: '4px', zIndex: 1000 }} // zIndexを1000に変更
               >
                 {presetSongs.map(song => (
                   <Button
@@ -66,38 +62,6 @@ export default function MusicSelector({
               </Card>
             )}
           </View>
-        </View>
-
-        {/* Spotify Playlist Section */}
-        <View flex={1}>
-          <Text fontWeight="semibold" marginBottom="small">
-            Spotifyプレイリスト
-          </Text>
-          <Flex gap="small">
-            <input
-              type="text"
-              value={playlistUrl}
-              onChange={(e) => setPlaylistUrl(e.target.value)}
-              placeholder="Spotify URL"
-              className="custom-input"
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: '4px',
-                border: '1px solid var(--amplify-colors-border-primary)',
-                backgroundColor: 'var(--amplify-colors-background-primary)',
-                color: 'var(--amplify-colors-font-primary)'
-              }}
-            />
-            <Button
-              onClick={() => {
-                onPlaylistLoad(playlistUrl);
-                setPlaylistUrl('');
-              }}
-            >
-              Load
-            </Button>
-          </Flex>
         </View>
       </Flex>
     </Card>
