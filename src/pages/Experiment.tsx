@@ -105,6 +105,10 @@ const Experiment = () => {
       <AudioPlayer
         currentSong={selectedSong}
         onPlayStateChange={handlePlayStateChange}
+        onTrackEnd={async () => {
+          console.log('Track ended');
+          // 必要に応じて他の処理を追加
+        }}
       />
       <ReviewDialog
         isOpen={isReviewDialogOpen}
