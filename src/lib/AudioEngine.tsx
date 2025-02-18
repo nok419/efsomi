@@ -1,20 +1,22 @@
-// src/lib/audio/AudioEngine.ts
-import { getUrl } from 'aws-amplify/storage';
-import { BridgeConfig, AudioLoadError, PlaybackError } from '../../types/audio';
+// src/lib/AudioEngine.tsx
+import { AudioLoadError} from '../types/audio';
 
+// シンプルなAudioNodeラッパ
 interface AudioNode {
   source: AudioBufferSourceNode;
   gainNode: GainNode;
   startTime?: number;
 }
 
+/**
+ * AudioContextベースの再生制御
+ */
 export class AudioEngine {
   private context: AudioContext;
   private currentTrack: AudioNode | null = null;
-  private nextTrack: AudioNode | null = null;
-  private bridgeSound: AudioNode | null = null;
+  // 省略: nextTrack, bridgeSound など
+  
   private bufferCache: Map<string, AudioBuffer> = new Map();
-  private urlCache: Map<string, string> = new Map();
   private isInitialized = false;
 
   constructor() {
@@ -22,14 +24,10 @@ export class AudioEngine {
   }
 
   async initialize(): Promise<void> {
-    try {
-      if (this.context.state === 'suspended') {
-        await this.context.resume();
-      }
-      this.isInitialized = true;
-    } catch (error) {
-      throw new AudioLoadError('Failed to initialize audio context');
+    if (this.context.state === 'suspended') {
+      await this.context.resume();
     }
+    this.isInitialized = true;
   }
 
   private checkInitialization() {
@@ -38,166 +36,44 @@ export class AudioEngine {
     }
   }
 
-  async getAudioUrl(key: string): Promise<string> {
-    try {
-      const cached = this.urlCache.get(key);
-      if (cached) return cached;
-
-      const { url } = await getUrl({
-        key,
-        options: {
-          validateObjectExistence: true,
-          expiresIn: 3600
-        }
-      });
-
-      if (!url) {
-        throw new Error('Failed to get URL');
-      }
-
-      const urlString = url.toString();
-      this.urlCache.set(key, urlString);
-      return urlString;
-    } catch (error) {
-      throw new AudioLoadError(`Failed to get audio URL for ${key}: ${error instanceof Error ? error.message : String(error)}`);
+  // Amplify StorageなどからURL取得済みと仮定
+  async loadAudio(url: string): Promise<AudioBuffer> {
+    this.checkInitialization();
+    if (this.bufferCache.has(url)) {
+      return this.bufferCache.get(url)!;
     }
+    const resp = await fetch(url);
+    if (!resp.ok) throw new AudioLoadError(`Failed to fetch: ${resp.statusText}`);
+    const arrBuf = await resp.arrayBuffer();
+    const audioBuf = await this.context.decodeAudioData(arrBuf);
+    this.bufferCache.set(url, audioBuf);
+    return audioBuf;
   }
 
   async loadAudioFromStorage(key: string): Promise<AudioBuffer> {
-    const url = await this.getAudioUrl(key);
-    return this.loadAudio(url);
+    // StorageManagerでURLを取得する流れがあるなら呼び出し
+    // ここではデモのため直接 loadAudio(key) を同等扱いに
+    return this.loadAudio(key);
   }
 
-  async loadAudio(url: string): Promise<AudioBuffer> {
+  // 再生
+  async play(buffer: AudioBuffer) {
     this.checkInitialization();
-    
-    try {
-      const cached = this.bufferCache.get(url);
-      if (cached) return cached;
+    // 既存を止める
+    await this.stopCurrent();
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new AudioLoadError(`Failed to load audio: ${response.statusText}`);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-      
-      this.bufferCache.set(url, audioBuffer);
-      return audioBuffer;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new AudioLoadError(error.message);
-      }
-      throw new AudioLoadError('Unknown error occurred');
-    }
-  }
-
-  async preloadAudios(keys: string[]): Promise<void> {
-    for (const key of keys.slice(0, 2)) {
-      try {
-        await this.loadAudioFromStorage(key);
-      } catch (error) {
-        console.warn(`Failed to preload audio: ${key}`, error);
-      }
-    }
-  }
-
-  private createAudioNode(buffer: AudioBuffer): AudioNode {
-    const source = this.context.createBufferSource();
+    const sourceNode = this.context.createBufferSource();
     const gainNode = this.context.createGain();
-
-    source.buffer = buffer;
-    source.connect(gainNode);
+    sourceNode.buffer = buffer;
+    sourceNode.connect(gainNode);
     gainNode.connect(this.context.destination);
-
-    return { source, gainNode };
-  }
-
-  async play(buffer: AudioBuffer): Promise<void> {
-    this.checkInitialization();
     
-    try {
-      await this.stopCurrent();
-      
-      const node = this.createAudioNode(buffer);
-      node.startTime = this.context.currentTime;
-      node.source.start();
-      this.currentTrack = node;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new AudioLoadError(error.message);
-      }
-      throw new AudioLoadError('Unknown error occurred');
-    }
-  }
-
-  async performTransition(
-    nextBuffer: AudioBuffer,
-    bridgeBuffer: AudioBuffer,
-    config: BridgeConfig
-  ): Promise<void> {
-    this.checkInitialization();
-
-    if (!this.currentTrack) {
-      throw new PlaybackError('No current track playing');
-    }
-
-    try {
-      const currentTime = this.context.currentTime;
-      const { duration, fadeDuration } = config;
-
-      this.currentTrack.gainNode.gain.linearRampToValueAtTime(
-        0,
-        currentTime + fadeDuration
-      );
-
-      const bridgeNode = this.createAudioNode(bridgeBuffer);
-      bridgeNode.gainNode.gain.setValueAtTime(0, currentTime + fadeDuration);
-      bridgeNode.gainNode.gain.linearRampToValueAtTime(
-        1,
-        currentTime + fadeDuration * 2
-      );
-      bridgeNode.gainNode.gain.linearRampToValueAtTime(
-        0,
-        currentTime + duration - fadeDuration
-      );
-      bridgeNode.source.start(currentTime + fadeDuration);
-      this.bridgeSound = bridgeNode;
-
-      const nextNode = this.createAudioNode(nextBuffer);
-      nextNode.gainNode.gain.setValueAtTime(0, currentTime + duration - fadeDuration);
-      nextNode.gainNode.gain.linearRampToValueAtTime(
-        1,
-        currentTime + duration
-      );
-      nextNode.source.start(currentTime + duration - fadeDuration);
-      this.nextTrack = nextNode;
-
-      setTimeout(() => {
-        this.currentTrack?.source.stop();
-        this.currentTrack = this.nextTrack;
-        this.nextTrack = null;
-        this.bridgeSound = null;
-      }, (duration + fadeDuration) * 1000);
-
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new AudioLoadError(error.message);
-      }
-      throw new AudioLoadError('Unknown error occurred');
-    }
-  }
-
-  private async stopCurrent(): Promise<void> {
-    if (this.currentTrack?.startTime) {
-      try {
-        this.currentTrack.source.stop();
-      } catch (error) {
-        // Ignore errors when stopping
-      }
-    }
-    this.currentTrack = null;
+    sourceNode.start();
+    this.currentTrack = {
+      source: sourceNode,
+      gainNode,
+      startTime: this.context.currentTime
+    };
   }
 
   pause(): void {
@@ -214,40 +90,29 @@ export class AudioEngine {
     }
   }
 
-  dispose(): void {
-    try {
-      this.stopCurrent();
-      this.bufferCache.clear();
-      this.urlCache.clear();
-      this.context.close();
-      this.isInitialized = false;
-    } catch (error) {
-      console.error('Error disposing AudioEngine:', error);
+  private async stopCurrent(): Promise<void> {
+    if (this.currentTrack) {
+      try {
+        this.currentTrack.source.stop();
+      } catch {
+        // ignore
+      }
+      this.currentTrack = null;
     }
   }
 
-  isPlaying(): boolean {
-    return this.currentTrack !== null && this.context.state === 'running';
+  dispose(): void {
+    this.stopCurrent();
+    this.bufferCache.clear();
+    this.context.close();
+    this.isInitialized = false;
   }
 
   getCurrentTime(): number {
-    if (!this.currentTrack?.startTime) return 0;
-    return this.context.currentTime - this.currentTrack.startTime;
-  }
-
-  async initializeForMobile(): Promise<void> {
-    if (this.context.state === 'suspended') {
-      await this.context.resume();
+    if (!this.currentTrack || this.context.state !== 'running') return 0;
+    if (typeof this.currentTrack.startTime === 'number') {
+      return this.context.currentTime - this.currentTrack.startTime;
     }
-    
-    const buffer = this.context.createBuffer(1, 1, 22050);
-    const source = this.context.createBufferSource();
-    source.buffer = buffer;
-    source.connect(this.context.destination);
-    source.start(0);
-  }
-
-  getBridgeSound(): AudioNode | null {
-    return this.bridgeSound;
+    return 0;
   }
 }

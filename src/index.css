@@ -1,3 +1,4 @@
+/* src/index.css */
 :root {
   --primary-navy: #1a365d;
   --primary-navy-light: #2a4a7f;
@@ -124,7 +125,7 @@
   border: none;
 }
 
-/* index.css に追加 */
+/* 追加のビジュアル調整 */
 .bridge-timeline {
   position: relative;
   height: 24px;
@@ -193,40 +194,4 @@
 
 .custom-slider::-moz-range-thumb:hover {
   transform: scale(1.1);
-}
-/* index.css のスライダー部分を簡素化 */
-.custom-slider {
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--amplify-colors-background-tertiary);
-  outline: none;
-}
-
-.custom-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--amplify-colors-brand-primary);
-  cursor: pointer;
-}
-
-.custom-slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border: none;
-  border-radius: 50%;
-  background: var(--amplify-colors-brand-primary);
-  cursor: pointer;
-}
-
-.custom-slider::-webkit-slider-runnable-track {
-  background: linear-gradient(
-    to right,
-    var(--amplify-colors-brand-primary) var(--progress, 0%),
-    var(--amplify-colors-background-tertiary) var(--progress, 0%)
-  );
-  border-radius: 2px;
-  height: 4px;
 }

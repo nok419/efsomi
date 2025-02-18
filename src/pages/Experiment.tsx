@@ -1,9 +1,11 @@
+// src/pages/Experiment.tsx
 import { useState, useEffect } from 'react';
 import { Card, Grid, View } from '@aws-amplify/ui-react';
 import AudioPlayer from '../components/shared/AudioPlayer';
 import SoundSelector from '../components/shared/SoundSelector';
 import BridgeController from '../components/shared/BridgeController';
-import { Song, EnvironmentalSound, BridgeConfig } from '../../types/audio';
+import MultiBridgeController from '../components/shared/MultiBridgeController';
+import { Song, EnvironmentalSound, BridgeConfig } from '../types/audio';
 import { songs } from '../data/songs';
 import { environmentalSounds } from '../data/environmentalSounds';
 
@@ -11,10 +13,13 @@ export default function Experiment() {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [nextSong, setNextSong] = useState<Song | null>(null);
   const [selectedSound, setSelectedSound] = useState<EnvironmentalSound | null>(null);
+  const [multiBridgeSounds, setMultiBridgeSounds] = useState<EnvironmentalSound[]>([]);
   const [bridgeConfig, setBridgeConfig] = useState<BridgeConfig>({
     duration: 5,
     fadeDuration: 1,
-    environmentalSoundId: ''
+    environmentalSoundId: '',
+    crossfadeOffset: 0,
+    bridgeSoundCount: 1
   });
 
   useEffect(() => {
@@ -28,7 +33,6 @@ export default function Experiment() {
 
   useEffect(() => {
     if (nextSong) {
-      // 次の曲の準備処理
       console.log('Next song queued:', nextSong.title);
     }
   }, [nextSong]);
@@ -47,16 +51,23 @@ export default function Experiment() {
           />
           <SoundSelector
             sounds={environmentalSounds}
-            onSoundSelect={setSelectedSound}
+            onSoundSelect={(sound: EnvironmentalSound) => setSelectedSound(sound)}
             selectedSoundId={selectedSound?.id}
+          />
+
+          <MultiBridgeController
+            config={bridgeConfig}
+            onConfigChange={setBridgeConfig}
+            availableSounds={environmentalSounds}
+            multiBridgeSounds={multiBridgeSounds}
+            setMultiBridgeSounds={setMultiBridgeSounds}
           />
         </Card>
 
-        {/* Side Panel */}
         <View>
           <AudioPlayer
             currentSong={currentSong}
-            onPlayStateChange={(isPlaying) => {
+            onPlayStateChange={(isPlaying: boolean) => {
               console.log('Playback state changed:', isPlaying);
             }}
           />

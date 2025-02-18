@@ -1,16 +1,17 @@
 // src/components/shared/AudioPlayer.tsx
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { Flex, Button, View, Text, Icon } from '@aws-amplify/ui-react';
+import { AudioPlayerProps } from '../../types/audio';
 import { AudioEngine } from '../../lib/AudioEngine';
-import { AudioPlayerProps } from '../../../types/audio';
 
 export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPlayerProps) {
   const audioEngineRef = useRef<AudioEngine | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const animationFrameRef = useRef<number>();
+  const rafRef = useRef<number>();
 
+  // AudioEngine の初期化
   const initializeAudioEngine = useCallback(async () => {
     if (!audioEngineRef.current) {
       audioEngineRef.current = new AudioEngine();
@@ -18,21 +19,19 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
     }
   }, []);
 
-  // Handle mobile audio initialization
+  // 初回タッチ/クリックで audio context を解放
   useEffect(() => {
     const handleUserInteraction = async () => {
       try {
         await initializeAudioEngine();
         document.removeEventListener('touchstart', handleUserInteraction);
         document.removeEventListener('click', handleUserInteraction);
-      } catch (error) {
-        console.error('Failed to initialize audio:', error);
+      } catch (err) {
+        console.error('Audio init failed:', err);
       }
     };
-
     document.addEventListener('touchstart', handleUserInteraction);
     document.addEventListener('click', handleUserInteraction);
-
     return () => {
       document.removeEventListener('touchstart', handleUserInteraction);
       document.removeEventListener('click', handleUserInteraction);
@@ -42,66 +41,57 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
     };
   }, [initializeAudioEngine]);
 
-  // Handle song changes
+  // currentSong が切り替わったら再生準備
   useEffect(() => {
-    const loadAndPlaySong = async () => {
+    const loadAndPlay = async () => {
       if (!currentSong || !audioEngineRef.current) return;
-
       try {
-        const buffer = await audioEngineRef.current.loadAudioFromStorage(currentSong.path);
-        setDuration(buffer.duration);
+        const buf = await audioEngineRef.current.loadAudioFromStorage(currentSong.path);
+        setDuration(buf.duration);
         if (isPlaying) {
-          await audioEngineRef.current.play(buffer);
+          await audioEngineRef.current.play(buf);
         }
-      } catch (error) {
-        console.error('Failed to load song:', error);
+      } catch (err) {
+        console.error('Fail to load song:', err);
       }
     };
-
-    loadAndPlaySong();
+    loadAndPlay();
   }, [currentSong, isPlaying]);
 
-  // Update current time
+  // 再生中は requestAnimationFrame で時間更新
   useEffect(() => {
-    const updateTime = () => {
+    const update = () => {
       if (audioEngineRef.current && isPlaying) {
         setCurrentTime(audioEngineRef.current.getCurrentTime());
-        animationFrameRef.current = requestAnimationFrame(updateTime);
+        rafRef.current = requestAnimationFrame(update);
       }
     };
-
     if (isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(updateTime);
+      rafRef.current = requestAnimationFrame(update);
     } else {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     }
-
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [isPlaying]);
 
-  const handlePlayPause = async () => {
+  // 再生/停止
+  const handlePlayPause = () => {
     if (!audioEngineRef.current) return;
-
     if (isPlaying) {
       audioEngineRef.current.pause();
     } else {
       audioEngineRef.current.resume();
     }
-    
     setIsPlaying(!isPlaying);
     onPlayStateChange(!isPlaying);
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -117,23 +107,19 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
         overflow: 'hidden'
       }}
     >
-      {/* Overlay layer */}
+      {/* 背景ぼかし用 */}
       <View
         style={{
-          background: 'rgba(0, 0, 0, 0.6)',
+          background: 'rgba(0,0,0,0.6)',
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+          inset: 0,
           backdropFilter: 'blur(10px)'
         }}
       />
-
-      {/* Content layer */}
+      
       <Flex direction="column" gap="medium" style={{ position: 'relative', zIndex: 1 }}>
-        {/* Track Info */}
-        <Flex direction="column" alignItems="center" gap="medium">
+        {/* 曲情報 */}
+        <Flex direction="column" alignItems="center" gap="small">
           <Text color="white" fontSize="xl" fontWeight="bold">
             {currentSong?.title || 'No track selected'}
           </Text>
@@ -142,7 +128,7 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
           </Text>
         </Flex>
 
-        {/* Controls */}
+        {/* 再生ボタン */}
         <Flex justifyContent="center" gap="large" alignItems="center">
           <Button
             variation="link"
@@ -151,17 +137,17 @@ export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPla
             onTouchStart={(e) => e.preventDefault()}
             onClick={handlePlayPause}
           >
-            <Icon fontSize="50px" ariaLabel={isPlaying ? "Pause" : "Play"}>
+            <Icon fontSize="50px" ariaLabel={isPlaying ? 'Pause' : 'Play'}>
               {isPlaying ? '⏸' : '▶️'}
             </Icon>
           </Button>
         </Flex>
 
-        {/* Seek Bar */}
+        {/* シークバー */}
         <Flex direction="column" gap="small" width="100%">
           <View
             height="8px"
-            backgroundColor="rgba(255, 255, 255, 0.2)"
+            backgroundColor="rgba(255,255,255,0.2)"
             borderRadius="full"
             overflow="hidden"
           >

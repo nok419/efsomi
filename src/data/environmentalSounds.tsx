@@ -1,4 +1,4 @@
-// src/data/environmentalSounds.ts
+// src/data/environmentalSounds.tsx
 import { EnvironmentalSound } from '../../types/audio';
 
 export const environmentalSounds: EnvironmentalSound[] = [

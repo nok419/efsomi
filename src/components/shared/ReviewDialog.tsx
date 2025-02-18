@@ -1,15 +1,9 @@
+// src/components/shared/ReviewDialog.tsx
 import { useState, useEffect } from 'react';
-import { 
-  View,
-  Flex,
-  Text,
-  Button,
-  Heading,
-  Card,
-  SliderField,
-  Divider
-} from '@aws-amplify/ui-react';
+import { View, Flex, Text, Button, Heading, Card, SliderField, Divider } from '@aws-amplify/ui-react';
+import { ReviewData } from '../../types/audio';
 
+// スライダー1つ分
 interface ReviewRating {
   value: number;
   onChange: (value: number) => void;
@@ -18,7 +12,6 @@ interface ReviewRating {
 }
 
 const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => {
-  // 値が正しく更新されていることを確認
   useEffect(() => {
     console.log(`Rating changed for ${label}: ${value}`);
   }, [value, label]);
@@ -32,7 +25,7 @@ const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => 
         </Text>
       )}
       <View width="100%" paddingTop="xs" position="relative">
-        {/* スライダーのティックマーク */}
+        {/* ティックマーク */}
         <Flex
           position="absolute"
           width="100%"
@@ -63,7 +56,7 @@ const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => 
           size="small"
         />
         
-        {/* 端点の数値表示 */}
+        {/* 端点(1,7)ラベル */}
         <Flex justifyContent="space-between" padding="2px" marginTop="4px">
           <Text fontSize="xs">1</Text>
           <Text fontSize="xs">7</Text>
@@ -73,21 +66,13 @@ const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => 
   );
 };
 
-interface ReviewData {
-  ratings: {
-    continuity: number;
-    emotional: number;
-    contextual: number;
-  };
-  additionalFeedback: {
-    wantToSkip: boolean;
-    feltDiscomfort: boolean;
-    wouldUseAgain: boolean;
-  };
-  timestamp: number;
+interface AdditionalFeedback {
+  wantToSkip: boolean;
+  feltDiscomfort: boolean;
+  wouldUseAgain: boolean;
 }
 
-interface ReviewDialogProps {
+interface DialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ReviewData) => void;
@@ -103,28 +88,39 @@ export const ReviewDialog = ({
   currentTrack,
   nextTrack,
   bridgeSound
-}: ReviewDialogProps) => {
+}: DialogProps) => {
+  // 3種のスライダー
   const [ratings, setRatings] = useState({
     continuity: 4,
     emotional: 4,
     contextual: 4
   });
 
-  const [additionalFeedback, setAdditionalFeedback] = useState({
+  // チェックボックス系
+  const [additionalFeedback, setAdditionalFeedback] = useState<AdditionalFeedback>({
     wantToSkip: false,
     feltDiscomfort: false,
     wouldUseAgain: true
   });
 
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
+
+  useEffect(() => {
+    const anyOutOfRange = Object.values(ratings).some(v => v < 1 || v > 7);
+    setIsSubmitDisabled(anyOutOfRange);
+  }, [ratings]);
+
   const handleSubmit = () => {
-    // 送信前に値の検証
-    console.log('Submitting ratings:', ratings);
-    onSubmit({
+    if (isSubmitDisabled) {
+      console.warn('Some ratings are invalid');
+      return;
+    }
+    const reviewData: ReviewData = {
       ratings,
       additionalFeedback,
       timestamp: Date.now()
-    });
-    onClose();
+    };
+    onSubmit(reviewData);
   };
 
   if (!isOpen) return null;
@@ -141,7 +137,7 @@ export const ReviewDialog = ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 1000
+        zIndex: 9999
       }}
     >
       <Card
@@ -154,9 +150,9 @@ export const ReviewDialog = ({
         overflow="auto"
       >
         <Flex direction="column" gap="medium">
-          <Heading level={4} padding="xs">遷移評価</Heading>
+          <Heading level={4} padding="xs">楽曲遷移の印象評価</Heading>
 
-          {/* 遷移情報の表示 */}
+          {/* 遷移情報 */}
           <Card variation="elevated" padding="xs">
             <Flex direction="column" gap="xs">
               <View>
@@ -184,46 +180,44 @@ export const ReviewDialog = ({
 
           <Divider />
 
-          {/* 評価スライダー */}
+          {/* スライダー3種 */}
           <Flex direction="column" gap="medium">
             <RatingSlider
               value={ratings.continuity}
               onChange={(value) => setRatings(prev => ({...prev, continuity: value}))}
               label="音楽の流れの自然さ"
-              description="遷移の滑らかさを評価してください"
+              description="遷移の滑らかさを評価 (1-7)"
             />
-
             <RatingSlider
               value={ratings.emotional}
               onChange={(value) => setRatings(prev => ({...prev, emotional: value}))}
               label="感情の繋がり"
-              description="曲想の連続性を評価してください"
+              description="曲想の連続性を評価 (1-7)"
             />
-
             <RatingSlider
               value={ratings.contextual}
               onChange={(value) => setRatings(prev => ({...prev, contextual: value}))}
               label="環境音の適切さ"
-              description="環境音の選択が適切か評価してください"
+              description="環境音の選択が適切か (1-7)"
             />
           </Flex>
 
           <Divider />
 
-          {/* 補足評価 */}
+          {/* チェックボックス */}
           <Card padding="xs">
             <Flex direction="column" gap="xs">
               {Object.entries({
                 wantToSkip: "スキップしたいと感じた",
                 feltDiscomfort: "違和感を覚えた",
-                wouldUseAgain: "この環境音をまた使いたい"
+                wouldUseAgain: "また使いたい"
               }).map(([key, label]) => (
                 <View 
                   key={key} 
                   onClick={() => 
                     setAdditionalFeedback(prev => ({
                       ...prev,
-                      [key]: !prev[key as keyof typeof additionalFeedback]
+                      [key]: !prev[key as keyof AdditionalFeedback]
                     }))
                   }
                   style={{ cursor: 'pointer' }}
@@ -233,7 +227,7 @@ export const ReviewDialog = ({
                       width="16px"
                       height="16px"
                       backgroundColor={
-                        additionalFeedback[key as keyof typeof additionalFeedback] 
+                        additionalFeedback[key as keyof AdditionalFeedback] 
                           ? 'brand.primary.80' 
                           : 'white'
                       }
@@ -249,11 +243,17 @@ export const ReviewDialog = ({
             </Flex>
           </Card>
 
+          {/* ボタン */}
           <Flex direction="row" gap="small" justifyContent="flex-end">
             <Button onClick={onClose} variation="link" size="small">
               キャンセル
             </Button>
-            <Button onClick={handleSubmit} variation="primary" size="small">
+            <Button 
+              onClick={handleSubmit} 
+              variation="primary" 
+              size="small"
+              isDisabled={isSubmitDisabled}
+            >
               送信
             </Button>
           </Flex>

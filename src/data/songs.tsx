@@ -1,4 +1,4 @@
-// src/data/songs.ts
+// src/data/songs.tsx
 import { Song } from '../../types/audio';
 
 export const songs: Song[] = [
@@ -17,4 +17,3 @@ export const songs: Song[] = [
     albumArt: '/images/22.jpg'
   },
 ];
-

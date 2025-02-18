@@ -1,12 +1,13 @@
+// src/components/shared/MusicSelector.tsx
 import { useState } from 'react';
 import { Card, Flex, Text, Button, View } from '@aws-amplify/ui-react';
-import { Song } from '../../../types/audio';
+import { Song } from '../../types/audio';
 
 interface MusicSelectorProps {
   presetSongs: Song[];
   onSongSelect: (song: Song) => void;
   onPlaylistLoad: (url: string) => void;
-  selectedSong: Song | null; // 追加
+  selectedSong: Song | null;
 }
 
 export default function MusicSelector({ 
@@ -17,16 +18,31 @@ export default function MusicSelector({
 }: MusicSelectorProps) {
   const [playlistUrl, setPlaylistUrl] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [filterText, setFilterText] = useState('');
+
+  // フィルタしたリスト
+  const filteredSongs = presetSongs.filter(song =>
+    song.title.toLowerCase().includes(filterText.toLowerCase()) ||
+    song.artist.toLowerCase().includes(filterText.toLowerCase())
+  );
 
   return (
     <Card padding="medium">
       <Text fontSize="large" fontWeight="bold">Music Selection</Text>
-      <Flex gap="medium" direction={{ base: 'column', medium: 'row' }}>
-        {/* Preset Music Section */}
+      <Flex direction={{ base: 'column', medium: 'row' }} gap="medium" marginTop="small">
+        {/* プリセット曲選択 */}
         <View flex={1}>
           <Text fontWeight="semibold" marginBottom="small">
             プリセット音楽
           </Text>
+          <input
+            type="text"
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            placeholder="検索 (タイトル/アーティスト)"
+            className="custom-input"
+            style={{ width: '100%', marginBottom: '8px' }}
+          />
           <View position="relative">
             <Button
               width="100%"
@@ -42,7 +58,7 @@ export default function MusicSelector({
                 className="dropdown-menu"
                 style={{ marginTop: '4px', zIndex: 100 }}
               >
-                {presetSongs.map(song => (
+                {filteredSongs.map(song => (
                   <Button
                     key={song.id}
                     variation="link"
@@ -68,7 +84,7 @@ export default function MusicSelector({
           </View>
         </View>
 
-        {/* Spotify Playlist Section */}
+        {/* Spotify プレイリストURL入力 */}
         <View flex={1}>
           <Text fontWeight="semibold" marginBottom="small">
             Spotifyプレイリスト
@@ -82,11 +98,8 @@ export default function MusicSelector({
               className="custom-input"
               style={{
                 flex: 1,
-                padding: '8px 12px',
-                borderRadius: '4px',
-                border: '1px solid var(--amplify-colors-border-primary)',
-                backgroundColor: 'var(--amplify-colors-background-primary)',
-                color: 'var(--amplify-colors-font-primary)'
+                padding: '8px',
+                borderRadius: '4px'
               }}
             />
             <Button

@@ -1,0 +1,2789 @@
+# efsomi
+
+## Directory Structure
+
+- efsomi/
+  - tsconfig.node.json
+  - index.html
+  - amplify.yml
+  - .eslintrc.cjs
+  - amplify/
+    - auth/
+      - resource.ts
+    - package.json
+    - tsconfig.json
+    - backend.ts
+    - data/
+      - resource.ts
+  - README.md
+  - public/
+    - vite.svg
+  - package.json
+  - tsconfig.json
+  - vite.config.ts
+  - src/
+    - App.tsx
+    - main.tsx
+    - types/
+      - audio.ts
+    - App.css
+    - index.css
+    - components/
+      - shared/
+        - ReviewDialog.tsx
+        - AudioPlayer.tsx
+        - MultiBridgeController.tsx
+        - SessionController.tsx
+        - MusicSelector.tsx
+        - SoundSelector.tsx
+        - BridgeController.tsx
+    - vite-env.d.ts
+    - lib/
+      - utils.ts
+      - ExperimentDataStore.ts
+      - StorageManager.ts
+      - AudioEngine.tsx
+    - data/
+      - images/
+        - 11.jpg (binary file)
+        - 22.jpg (binary file)
+        - c.jpg (binary file)
+        - s.jpg (binary file)
+        - ca.jpg (binary file)
+        - r.jpg (binary file)
+      - audio/
+        - 22.mp3 (binary file)
+        - 11.mp3 (binary file)
+      - environmentalSounds.tsx
+      - songs.tsx
+    - assets/
+      - react.svg
+    - pages/
+      - ExperimentFlow.tsx
+      - Experiment.tsx
+
+## File Contents
+
+### tsconfig.node.json
+
+```
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "strict": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+```
+
+### index.html
+
+```
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>efsomi</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+```
+
+### amplify.yml
+
+```
+version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - npm ci --cache .npm --prefer-offline
+        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+frontend:
+  phases:
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .npm/**/*
+      - node_modules/**/*
+```
+
+### .eslintrc.cjs
+
+```
+module.exports = {
+  root: true,
+  env: { browser: true, es2020: true },
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react-hooks/recommended',
+  ],
+  ignorePatterns: ['dist', '.eslintrc.cjs'],
+  parser: '@typescript-eslint/parser',
+  plugins: ['react-refresh'],
+  rules: {
+    'react-refresh/only-export-components': [
+      'warn',
+      { allowConstantExport: true },
+    ],
+  },
+}
+
+```
+
+### amplify/auth/resource.ts
+
+```
+import { defineAuth } from '@aws-amplify/backend';
+
+/**
+ * Define and configure your auth resource
+ * @see https://docs.amplify.aws/gen2/build-a-backend/auth
+ */
+export const auth = defineAuth({
+  loginWith: {
+    email: true,
+  },
+});
+
+```
+
+### amplify/package.json
+
+```
+{
+  "type": "module"
+}
+```
+
+### amplify/tsconfig.json
+
+```
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "$amplify/*": [
+        "../.amplify/generated/*"
+      ]
+    }
+  }
+}
+```
+
+### amplify/backend.ts
+
+```
+import { defineBackend } from '@aws-amplify/backend';
+import { auth } from './auth/resource';
+import { data } from './data/resource';
+
+defineBackend({
+  auth,
+  data,
+});
+
+```
+
+### amplify/data/resource.ts
+
+```
+import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+
+/*== STEP 1 ===============================================================
+The section below creates a Todo database table with a "content" field. Try
+adding a new "isDone" field as a boolean. The authorization rule below
+specifies that any user authenticated via an API key can "create", "read",
+"update", and "delete" any "Todo" records.
+=========================================================================*/
+const schema = a.schema({
+  Todo: a
+    .model({
+      content: a.string(),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+});
+
+export type Schema = ClientSchema<typeof schema>;
+
+export const data = defineData({
+  schema,
+  authorizationModes: {
+    defaultAuthorizationMode: "apiKey",
+    // API Key is used for a.allow.public() rules
+    apiKeyAuthorizationMode: {
+      expiresInDays: 30,
+    },
+  },
+});
+
+/*== STEP 2 ===============================================================
+Go to your frontend source code. From your client-side code, generate a
+Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
+WORK IN THE FRONTEND CODE FILE.)
+
+Using JavaScript or Next.js React Server Components, Middleware, Server 
+Actions or Pages Router? Review how to generate Data clients for those use
+cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
+=========================================================================*/
+
+/*
+"use client"
+import { generateClient } from "aws-amplify/data";
+import type { Schema } from "@/amplify/data/resource";
+
+const client = generateClient<Schema>() // use this Data client for CRUDL requests
+*/
+
+/*== STEP 3 ===============================================================
+Fetch records from the database and use them in your frontend component.
+(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
+=========================================================================*/
+
+/* For example, in a React component, you can use this snippet in your
+  function's RETURN statement */
+// const { data: todos } = await client.models.Todo.list()
+
+// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>
+
+```
+
+### README.md
+
+```
+## AWS Amplify React+Vite Starter Template
+
+This repository provides a starter template for creating applications using React+Vite and AWS Amplify, emphasizing easy setup for authentication, API, and database capabilities.
+
+## Overview
+
+This template equips you with a foundational React application integrated with AWS Amplify, streamlined for scalability and performance. It is ideal for developers looking to jumpstart their project with pre-configured AWS services like Cognito, AppSync, and DynamoDB.
+
+## Features
+
+- **Authentication**: Setup with Amazon Cognito for secure user authentication.
+- **API**: Ready-to-use GraphQL endpoint with AWS AppSync.
+- **Database**: Real-time database powered by Amazon DynamoDB.
+
+## Deploying to AWS
+
+For detailed instructions on deploying your application, refer to the [deployment section](https://docs.amplify.aws/react/start/quickstart/#deploy-a-fullstack-app-to-aws) of our documentation.
+
+## Security
+
+See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+
+## License
+
+This library is licensed under the MIT-0 License. See the LICENSE file.
+```
+
+### public/vite.svg
+
+```
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="31.88" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 257"><defs><linearGradient id="IconifyId1813088fe1fbc01fb466" x1="-.828%" x2="57.636%" y1="7.652%" y2="78.411%"><stop offset="0%" stop-color="#41D1FF"></stop><stop offset="100%" stop-color="#BD34FE"></stop></linearGradient><linearGradient id="IconifyId1813088fe1fbc01fb467" x1="43.376%" x2="50.316%" y1="2.242%" y2="89.03%"><stop offset="0%" stop-color="#FFEA83"></stop><stop offset="8.333%" stop-color="#FFDD35"></stop><stop offset="100%" stop-color="#FFA800"></stop></linearGradient></defs><path fill="url(#IconifyId1813088fe1fbc01fb466)" d="M255.153 37.938L134.897 252.976c-2.483 4.44-8.862 4.466-11.382.048L.875 37.958c-2.746-4.814 1.371-10.646 6.827-9.67l120.385 21.517a6.537 6.537 0 0 0 2.322-.004l117.867-21.483c5.438-.991 9.574 4.796 6.877 9.62Z"></path><path fill="url(#IconifyId1813088fe1fbc01fb467)" d="M185.432.063L96.44 17.501a3.268 3.268 0 0 0-2.634 3.014l-5.474 92.456a3.268 3.268 0 0 0 3.997 3.378l24.777-5.718c2.318-.535 4.413 1.507 3.936 3.838l-7.361 36.047c-.495 2.426 1.782 4.5 4.151 3.78l15.304-4.649c2.372-.72 4.652 1.36 4.15 3.788l-11.698 56.621c-.732 3.542 3.979 5.473 5.943 2.437l1.313-2.028l72.516-144.72c1.215-2.423-.88-5.186-3.54-4.672l-25.505 4.922c-2.396.462-4.435-1.77-3.759-4.114l16.646-57.705c.677-2.35-1.37-4.583-3.769-4.113Z"></path></svg>
+```
+
+### package.json
+
+```
+{
+  "name": "amplify-vite-react-template",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@aws-amplify/ui-react": "^6.5.5",
+    "aws-amplify": "^6.6.6",
+    "clsx": "^2.1.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tailwind-merge": "^2.5.5"
+  },
+  "devDependencies": {
+    "@aws-amplify/backend": "^1.5.0",
+    "@aws-amplify/backend-cli": "^1.2.9",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "aws-cdk": "^2.138.0",
+    "aws-cdk-lib": "^2.138.0",
+    "constructs": "^10.3.0",
+    "esbuild": "^0.20.2",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.6",
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5",
+    "vite": "^5.4.10"
+  }
+}
+
+```
+
+### tsconfig.json
+
+```
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "types/*": ["./types/*"]
+    },
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "types"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}
+```
+
+### vite.config.ts
+
+```
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+
+```
+
+### src/App.tsx
+
+```
+// src/App.tsx
+import { useState } from 'react';
+import { View, ThemeProvider } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+
+import { ExperimentDataStore } from './lib/ExperimentDataStore';
+import SessionController from './components/shared/SessionController';
+import ExperimentFlow from './pages/ExperimentFlow';
+
+const theme = {
+  name: 'efsomi-theme',
+  tokens: {
+    // 必要に応じて Amplify UI のテーマトークンを設定
+  },
+};
+
+export default function App() {
+  // DataStore ラッパクラスのインスタンスを1つだけ生成
+  const [dataStore] = useState(() => new ExperimentDataStore());
+  
+  // 「セッション開始」状態かどうか
+  const [isSessionActive, setIsSessionActive] = useState(false);
+
+  // セッション開始・終了時のハンドラ
+  const handleSessionStart = () => setIsSessionActive(true);
+  const handleSessionEnd = () => setIsSessionActive(false);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <View backgroundColor="background.secondary" minHeight="100vh" padding="large">
+        {/* 実験セッションの開始/終了管理 */}
+        <SessionController
+          onSessionStart={handleSessionStart}
+          onSessionEnd={handleSessionEnd}
+          dataStore={dataStore}
+        />
+
+        {/* 実験セッションが始まっていれば ExperimentFlow を表示 */}
+        {isSessionActive && (
+          <ExperimentFlow />
+        )}
+      </View>
+    </ThemeProvider>
+  );
+}
+
+```
+
+### src/main.tsx
+
+```
+// src/main.tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+
+import { Amplify } from 'aws-amplify';
+import outputs from '../amplify_outputs.json';  // Amplify CLI の出力例
+
+import App from './App';
+
+// ★ Amplify.configure は1回のみ
+Amplify.configure(outputs);
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+```
+
+### src/types/audio.ts
+
+```
+// src/types/audio.ts
+
+// エラー定義を追加
+export class AudioLoadError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = 'AudioLoadError';
+  }
+}
+
+export class PlaybackError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = 'PlaybackError';
+  }
+}
+
+// Song
+export interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  path: string;
+  albumArt?: string;
+}
+
+// EnvironmentalSound
+export interface EnvironmentalSound {
+  id: string;
+  name: string;
+  category: 'nature' | 'urban';
+  subCategory: string;
+  characteristics: string[];
+  src: string;
+  thumbnail: string;
+}
+
+// BridgeConfig
+export interface BridgeConfig {
+  duration: number;              // Bridgeの長さ
+  fadeDuration: number;          // フェード時間
+  environmentalSoundId: string;  // 選択中の環境音ID
+  crossfadeOffset: number;       // 曲Aと環境音を重ねるオフセット (負: 早め, 正: 遅め)
+  bridgeSoundCount: number;      // 複数環境音を連続挿入する数
+}
+
+// ReviewData (レビュー用)
+export interface ReviewData {
+  ratings: {
+    continuity: number;
+    emotional: number;
+    contextual: number;
+  };
+  additionalFeedback: {
+    wantToSkip: boolean;
+    feltDiscomfort: boolean;
+    wouldUseAgain: boolean;
+  };
+  timestamp: number;
+}
+
+// -----------------------------------------
+// ここから追加: ExperimentSession と TransitionEvent
+// -----------------------------------------
+export interface TransitionEvent {
+  eventId: string;
+  sessionId: string;    // 紐づくセッションID
+  // 必要に応じて他のフィールドを追加
+  fromSongId?: string;  // 遷移前楽曲
+  toSongId?: string;    // 遷移後楽曲
+  // ...
+}
+
+export interface ExperimentSession {
+  sessionId: string;
+  startTime: string;
+  endTime?: string;
+  transitions: TransitionEvent[];
+  reviews: ReviewData[];
+}
+// -----------------------------------------
+
+// AudioPlayerProps
+export interface AudioPlayerProps {
+  currentSong: Song | null;
+  onPlayStateChange: (isPlaying: boolean) => void;
+}
+
+// BridgeControllerProps
+export interface BridgeControllerProps {
+  config: BridgeConfig;
+  onConfigChange: (newConfig: BridgeConfig) => void;
+  selectedSound: EnvironmentalSound | null;
+}
+
+// SoundSelectorProps
+export interface SoundSelectorProps {
+  sounds: EnvironmentalSound[];
+  selectedSoundId?: string;
+  onSoundSelect: (sound: EnvironmentalSound) => void;
+}
+
+// ReviewDialogProps (例：本ファイルに定義してもよい)
+export interface ReviewDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: ReviewData) => void;
+  currentTrack: Song | null;
+  nextTrack: Song | null;
+  bridgeSound: EnvironmentalSound | null;
+}
+
+```
+
+### src/App.css
+
+```
+/* src/App.css */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+```
+
+### src/index.css
+
+```
+/* src/index.css */
+:root {
+  --primary-navy: #1a365d;
+  --primary-navy-light: #2a4a7f;
+  --background-light: #f8fafc;
+}
+
+.amplify-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.custom-slider {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to right, #1a365d 0%, #1a365d 30%, #e2e8f0 30%, #e2e8f0 100%);
+  border-radius: 2px;
+  outline: none;
+  appearance: none;
+}
+
+.custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #1a365d;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.custom-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #1a365d;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* Card styles */
+.amplify-card {
+  background-color: var(--amplify-colors-background-primary);
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Button hover effects */
+.amplify-button {
+  transition: transform 0.2s ease;
+}
+
+.amplify-button:hover {
+  transform: translateY(-1px);
+}
+
+/* Dropdown menu animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-menu {
+  animation: slideIn 0.2s ease;
+}
+
+.custom-input:focus {
+  outline: none;
+  border-color: var(--amplify-colors-brand-primary);
+  box-shadow: 0 0 0 2px var(--amplify-colors-brand-primary-10);
+}
+
+.custom-input::placeholder {
+  color: var(--amplify-colors-font-tertiary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-navy: #2a4a7f;
+    --primary-navy-light: #3a5a9f;
+    --background-light: #1a202c;
+  }
+}
+
+.custom-slider-container {
+  width: 100%;
+  padding: 8px 0;
+}
+
+.custom-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  appearance: none;
+}
+
+.custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--amplify-colors-brand-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.custom-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--amplify-colors-brand-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+/* 追加のビジュアル調整 */
+.bridge-timeline {
+  position: relative;
+  height: 24px;
+  margin: 8px 0;
+  padding: 8px 0;
+}
+
+.time-markers {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+}
+
+.time-marker {
+  width: 1px;
+  height: 8px;
+  background-color: var(--amplify-colors-border-primary);
+}
+
+.time-marker:nth-child(5),
+.time-marker:nth-child(10) {
+  height: 12px;
+}
+
+.custom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, 
+    var(--amplify-colors-brand-primary) var(--slider-percent, 50%), 
+    var(--amplify-colors-background-tertiary) var(--slider-percent, 50%)
+  );
+  outline: none;
+  transition: background 0.1s ease;
+}
+
+.custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--amplify-colors-brand-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease;
+}
+
+.custom-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.custom-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--amplify-colors-brand-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease;
+}
+
+.custom-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+```
+
+### src/components/shared/ReviewDialog.tsx
+
+```
+// src/components/shared/ReviewDialog.tsx
+import { useState, useEffect } from 'react';
+import { 
+  View,
+  Flex,
+  Text,
+  Button,
+  Heading,
+  Card,
+  SliderField,
+  Divider
+} from '@aws-amplify/ui-react';
+import { ReviewData } from '../../types/audio';
+
+interface ReviewRating {
+  value: number;
+  onChange: (value: number) => void;
+  label: string;
+  description?: string;
+}
+
+const RatingSlider = ({ value, onChange, label, description }: ReviewRating) => {
+  useEffect(() => {
+    console.log(`Rating changed for ${label}: ${value}`);
+  }, [value, label]);
+
+  return (
+    <Flex direction="column" gap="xs">
+      <Text fontSize="medium">{label}</Text>
+      {description && (
+        <Text variation="secondary" fontSize="small">
+          {description}
+        </Text>
+      )}
+      <View width="100%" paddingTop="xs" position="relative">
+        <Flex
+          position="absolute"
+          width="100%"
+          justifyContent="space-between"
+          padding="2px"
+          top="12px"
+          style={{ pointerEvents: 'none' }}
+        >
+          {[...Array(7)].map((_, i) => (
+            <View
+              key={i}
+              width="1px"
+              height="8px"
+              backgroundColor="border.primary"
+            />
+          ))}
+        </Flex>
+        
+        <SliderField
+          label={`評価値: ${value}`}
+          labelHidden
+          value={value}
+          onChange={(e) => onChange(Number(e))}
+          min={1}
+          max={7}
+          step={1}
+          size="small"
+        />
+        
+        <Flex justifyContent="space-between" padding="2px" marginTop="4px">
+          <Text fontSize="xs">1</Text>
+          <Text fontSize="xs">7</Text>
+        </Flex>
+      </View>
+    </Flex>
+  );
+};
+
+interface AdditionalFeedback {
+  wantToSkip: boolean;
+  feltDiscomfort: boolean;
+  wouldUseAgain: boolean;
+}
+
+interface DialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: ReviewData) => void;
+  currentTrack: { title: string; artist: string } | null;
+  nextTrack: { title: string; artist: string } | null;
+  bridgeSound: { name: string; category: string } | null;
+}
+
+export const ReviewDialog = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  currentTrack,
+  nextTrack,
+  bridgeSound
+}: DialogProps) => {
+  const [ratings, setRatings] = useState({
+    continuity: 4,
+    emotional: 4,
+    contextual: 4
+  });
+
+  const [additionalFeedback, setAdditionalFeedback] = useState<AdditionalFeedback>({
+    wantToSkip: false,
+    feltDiscomfort: false,
+    wouldUseAgain: true
+  });
+
+  // 「未回答チェック」を追加
+  const [isSubmitDisabled, setIsSubmitDisabled] = useState(false);
+
+  useEffect(() => {
+    // 例: continuity, emotional, contextual が全て1~7ならOK
+    const anyOutOfRange = Object.values(ratings).some(v => v < 1 || v > 7);
+    setIsSubmitDisabled(anyOutOfRange);
+  }, [ratings]);
+
+  const handleSubmit = () => {
+    if (isSubmitDisabled) {
+      console.warn('Some ratings are invalid');
+      return;
+    }
+    const reviewData: ReviewData = {
+      ratings,
+      additionalFeedback,
+      timestamp: Date.now()
+    };
+    onSubmit(reviewData);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <View
+      position="fixed"
+      top="0"
+      left="0"
+      right="0"
+      bottom="0"
+      backgroundColor="rgba(0, 0, 0, 0.5)"
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
+      }}
+    >
+      <Card
+        backgroundColor="white"
+        padding="medium"
+        borderRadius="medium"
+        width="90%"
+        maxWidth="500px"
+        maxHeight="90vh"
+        overflow="auto"
+      >
+        <Flex direction="column" gap="medium">
+          <Heading level={4} padding="xs">楽曲遷移の印象評価</Heading>
+
+          {/* 遷移情報の表示 */}
+          <Card variation="elevated" padding="xs">
+            <Flex direction="column" gap="xs">
+              <View>
+                <Text fontWeight="bold" fontSize="small">遷移前</Text>
+                <Text variation="secondary" fontSize="small">
+                  {currentTrack?.title} - {currentTrack?.artist}
+                </Text>
+              </View>
+              
+              <View>
+                <Text fontWeight="bold" fontSize="small">環境音</Text>
+                <Text variation="secondary" fontSize="small">
+                  {bridgeSound?.name} ({bridgeSound?.category})
+                </Text>
+              </View>
+
+              <View>
+                <Text fontWeight="bold" fontSize="small">遷移後</Text>
+                <Text variation="secondary" fontSize="small">
+                  {nextTrack?.title} - {nextTrack?.artist}
+                </Text>
+              </View>
+            </Flex>
+          </Card>
+
+          <Divider />
+
+          {/* スライダー評価 */}
+          <Flex direction="column" gap="medium">
+            <RatingSlider
+              value={ratings.continuity}
+              onChange={(value) => setRatings(prev => ({...prev, continuity: value}))}
+              label="音楽の流れの自然さ"
+              description="遷移の滑らかさを評価 (1-7)"
+            />
+            <RatingSlider
+              value={ratings.emotional}
+              onChange={(value) => setRatings(prev => ({...prev, emotional: value}))}
+              label="感情の繋がり"
+              description="曲想の連続性を評価 (1-7)"
+            />
+            <RatingSlider
+              value={ratings.contextual}
+              onChange={(value) => setRatings(prev => ({...prev, contextual: value}))}
+              label="環境音の適切さ"
+              description="環境音の選択が適切か (1-7)"
+            />
+          </Flex>
+
+          <Divider />
+
+          {/* チェックボックス形式の追加質問 */}
+          <Card padding="xs">
+            <Flex direction="column" gap="xs">
+              {Object.entries({
+                wantToSkip: "スキップしたいと感じた",
+                feltDiscomfort: "違和感を覚えた",
+                wouldUseAgain: "この環境音をまた使いたい"
+              }).map(([key, label]) => (
+                <View 
+                  key={key} 
+                  onClick={() => 
+                    setAdditionalFeedback(prev => ({
+                      ...prev,
+                      [key]: !prev[key as keyof AdditionalFeedback]
+                    }))
+                  }
+                  style={{ cursor: 'pointer' }}
+                >
+                  <Flex alignItems="center" gap="xs">
+                    <View
+                      width="16px"
+                      height="16px"
+                      backgroundColor={
+                        additionalFeedback[key as keyof AdditionalFeedback] 
+                          ? 'brand.primary.80' 
+                          : 'white'
+                      }
+                      borderRadius="small"
+                      borderWidth="1px"
+                      borderStyle="solid"
+                      borderColor="border.primary"
+                    />
+                    <Text fontSize="small">{label}</Text>
+                  </Flex>
+                </View>
+              ))}
+            </Flex>
+          </Card>
+
+          <Flex direction="row" gap="small" justifyContent="flex-end">
+            <Button onClick={onClose} variation="link" size="small">
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              variation="primary" 
+              size="small"
+              isDisabled={isSubmitDisabled}
+            >
+              送信
+            </Button>
+          </Flex>
+        </Flex>
+      </Card>
+    </View>
+  );
+};
+
+```
+
+### src/components/shared/AudioPlayer.tsx
+
+```
+// src/components/shared/AudioPlayer.tsx
+import { useEffect, useCallback, useRef, useState } from 'react';
+import { Flex, Button, View, Text, Icon } from '@aws-amplify/ui-react';
+import { AudioEngine } from '../../lib/AudioEngine';
+import { AudioPlayerProps } from '../../../types/audio';
+
+export default function AudioPlayer({ currentSong, onPlayStateChange }: AudioPlayerProps) {
+  const audioEngineRef = useRef<AudioEngine | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const animationFrameRef = useRef<number>();
+
+  const initializeAudioEngine = useCallback(async () => {
+    if (!audioEngineRef.current) {
+      audioEngineRef.current = new AudioEngine();
+      await audioEngineRef.current.initialize();
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleUserInteraction = async () => {
+      try {
+        await initializeAudioEngine();
+        document.removeEventListener('touchstart', handleUserInteraction);
+        document.removeEventListener('click', handleUserInteraction);
+      } catch (error) {
+        console.error('Failed to initialize audio:', error);
+      }
+    };
+
+    document.addEventListener('touchstart', handleUserInteraction);
+    document.addEventListener('click', handleUserInteraction);
+
+    return () => {
+      document.removeEventListener('touchstart', handleUserInteraction);
+      document.removeEventListener('click', handleUserInteraction);
+      if (audioEngineRef.current) {
+        audioEngineRef.current.dispose();
+      }
+    };
+  }, [initializeAudioEngine]);
+
+  useEffect(() => {
+    const loadAndPlaySong = async () => {
+      if (!currentSong || !audioEngineRef.current) return;
+
+      try {
+        const buffer = await audioEngineRef.current.loadAudioFromStorage(currentSong.path);
+        setDuration(buffer.duration);
+        if (isPlaying) {
+          await audioEngineRef.current.play(buffer);
+        }
+      } catch (error) {
+        console.error('Failed to load song:', error);
+      }
+    };
+
+    loadAndPlaySong();
+  }, [currentSong, isPlaying]);
+
+  useEffect(() => {
+    const updateTime = () => {
+      if (audioEngineRef.current && isPlaying) {
+        setCurrentTime(audioEngineRef.current.getCurrentTime());
+        animationFrameRef.current = requestAnimationFrame(updateTime);
+      }
+    };
+
+    if (isPlaying) {
+      animationFrameRef.current = requestAnimationFrame(updateTime);
+    } else {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying]);
+
+  const handlePlayPause = () => {
+    if (!audioEngineRef.current) return;
+
+    if (isPlaying) {
+      audioEngineRef.current.pause();
+    } else {
+      audioEngineRef.current.resume();
+    }
+    
+    setIsPlaying(!isPlaying);
+    onPlayStateChange(!isPlaying);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <View
+      padding="large"
+      backgroundColor="background.secondary"
+      style={{
+        backgroundImage: currentSong?.albumArt ? `url(${currentSong.albumArt})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        borderRadius: '8px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      <View
+        style={{
+          background: 'rgba(0, 0, 0, 0.6)',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backdropFilter: 'blur(10px)'
+        }}
+      />
+
+      <Flex direction="column" gap="medium" style={{ position: 'relative', zIndex: 1 }}>
+        <Flex direction="column" alignItems="center" gap="medium">
+          <Text color="white" fontSize="xl" fontWeight="bold">
+            {currentSong?.title || 'No track selected'}
+          </Text>
+          <Text color="white" variation="secondary" fontSize="large">
+            {currentSong?.artist || 'Unknown artist'}
+          </Text>
+        </Flex>
+
+        <Flex justifyContent="center" gap="large" alignItems="center">
+          <Button
+            variation="link"
+            size="large"
+            color="white"
+            onTouchStart={(e) => e.preventDefault()}
+            onClick={handlePlayPause}
+          >
+            <Icon fontSize="50px" ariaLabel={isPlaying ? "Pause" : "Play"}>
+              {isPlaying ? '⏸' : '▶️'}
+            </Icon>
+          </Button>
+        </Flex>
+
+        <Flex direction="column" gap="small" width="100%">
+          <View
+            height="8px"
+            backgroundColor="rgba(255, 255, 255, 0.2)"
+            borderRadius="full"
+            overflow="hidden"
+          >
+            <View
+              width={`${(currentTime / duration) * 100}%`}
+              height="100%"
+              backgroundColor="white"
+            />
+          </View>
+          <Flex justifyContent="space-between">
+            <Text color="white" fontSize="small">
+              {formatTime(currentTime)}
+            </Text>
+            <Text color="white" fontSize="small">
+              {formatTime(duration)}
+            </Text>
+          </Flex>
+        </Flex>
+      </Flex>
+    </View>
+  );
+}
+
+```
+
+### src/components/shared/MultiBridgeController.tsx
+
+```
+// src/components/shared/MultiBridgeController.tsx
+import { useState } from 'react';
+import { Card, Flex, Text, Button } from '@aws-amplify/ui-react';
+import { EnvironmentalSound, BridgeConfig } from '../../types/audio';
+
+interface MultiBridgeControllerProps {
+  config: BridgeConfig;
+  onConfigChange: (newConfig: BridgeConfig) => void;
+  availableSounds: EnvironmentalSound[];
+  multiBridgeSounds: EnvironmentalSound[];
+  setMultiBridgeSounds: (sounds: EnvironmentalSound[]) => void;
+}
+
+export default function MultiBridgeController({
+  config,
+  onConfigChange,
+  availableSounds,
+  multiBridgeSounds,
+  setMultiBridgeSounds
+}: MultiBridgeControllerProps) {
+
+  // 複数選択した環境音のIDを文字列配列で保持
+  const [tempSelectedIds, setTempSelectedIds] = useState<string[]>([]);
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedOptions = Array.from(e.target.selectedOptions);
+    const ids = selectedOptions.map(opt => opt.value);
+    setTempSelectedIds(ids);
+  };
+
+  const handleAddBridgeSound = () => {
+    if (tempSelectedIds.length === 0) return;
+    // ID に対応するサウンドを検索
+    const newSounds = tempSelectedIds
+      .map(id => availableSounds.find(s => s.id === id))
+      .filter(Boolean) as EnvironmentalSound[];
+    
+    setMultiBridgeSounds([...multiBridgeSounds, ...newSounds]);
+    setTempSelectedIds([]);
+  };
+
+  const removeBridgeSound = (indexToRemove: number) => {
+    const updated = multiBridgeSounds.filter((_, i) => i !== indexToRemove);
+    setMultiBridgeSounds(updated);
+  };
+
+  const handleBridgeSoundCountChange = (val: number) => {
+    onConfigChange({ ...config, bridgeSoundCount: val });
+  };
+
+  return (
+    <Card padding="medium">
+      <Flex direction="column" gap="small">
+        <Text fontSize="large" fontWeight="bold">
+          Multiple Bridge Sounds
+        </Text>
+
+        {/* ネイティブの <select multiple> で複数選択を扱う */}
+        <Flex direction="row" gap="small" alignItems="center">
+          <select
+            multiple
+            value={tempSelectedIds}
+            onChange={handleSelectChange}
+            style={{
+              flex: 1,
+              minHeight: '100px',
+              border: '1px solid #ccc',
+              borderRadius: '4px'
+            }}
+          >
+            {availableSounds.map((sound) => (
+              <option key={sound.id} value={sound.id}>
+                {sound.name} ({sound.category})
+              </option>
+            ))}
+          </select>
+
+          <Button size="small" onClick={handleAddBridgeSound}>
+            追加
+          </Button>
+        </Flex>
+
+        <Flex direction="column" gap="xxs" marginTop="small">
+          <Text>選択されたブリッジ音リスト:</Text>
+          {multiBridgeSounds.length === 0 && (
+            <Text fontSize="small" color="font.tertiary">選択されていません</Text>
+          )}
+          {multiBridgeSounds.map((bs, idx) => (
+            <Flex 
+              key={`bs-${idx}`} 
+              direction="row" 
+              alignItems="center" 
+              justifyContent="space-between"
+              marginTop="4px"
+            >
+              <Text fontSize="small">
+                {idx + 1}. {bs.name} ({bs.category})
+              </Text>
+              <Button
+                size="small"
+                variation="link"
+                onClick={() => removeBridgeSound(idx)}
+              >
+                削除
+              </Button>
+            </Flex>
+          ))}
+        </Flex>
+
+        <Flex direction="column" gap="small" marginTop="small">
+          <Text>Bridge Sound Count: {config.bridgeSoundCount}</Text>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={1}
+            value={config.bridgeSoundCount}
+            onChange={(e) => handleBridgeSoundCountChange(parseInt(e.target.value, 10))}
+          />
+        </Flex>
+      </Flex>
+    </Card>
+  );
+}
+
+
+```
+
+### src/components/shared/SessionController.tsx
+
+```
+// src/components/shared/SessionController.tsx
+import { useState } from 'react';
+import { Flex, Button, Card, Text } from '@aws-amplify/ui-react';
+import { ExperimentDataStore } from '../../lib/ExperimentDataStore';
+
+interface SessionControllerProps {
+  onSessionStart: () => void;
+  onSessionEnd: () => void;
+  dataStore: ExperimentDataStore;
+}
+
+export default function SessionController({
+  onSessionStart,
+  onSessionEnd,
+  dataStore,
+}: SessionControllerProps) {
+  const [sessionActive, setSessionActive] = useState<boolean>(dataStore.isSessionActive());
+
+  // セッション開始
+  const handleStartSession = async () => {
+    try {
+      const sessionId = await dataStore.startSession();
+      console.log('Session started:', sessionId);
+      setSessionActive(true);
+      onSessionStart();  // App 側に通知
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // セッション終了
+  const handleEndSession = async () => {
+    try {
+      await dataStore.endSession();
+      console.log('Session ended');
+      setSessionActive(false);
+      onSessionEnd(); // App 側に通知
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <Card padding="medium">
+      <Text fontWeight="bold">Session Control</Text>
+      <Flex gap="small" marginTop="small">
+        <Button 
+          variation="primary" 
+          onClick={handleStartSession}
+          isDisabled={sessionActive}
+        >
+          実験開始
+        </Button>
+        <Button
+          variation="warning"
+          onClick={handleEndSession}
+          isDisabled={!sessionActive}
+        >
+          実験終了
+        </Button>
+      </Flex>
+    </Card>
+  );
+}
+
+```
+
+### src/components/shared/MusicSelector.tsx
+
+```
+// src/components/shared/MusicSelector.tsx
+import { useState } from 'react';
+import { Card, Flex, Text, Button, View } from '@aws-amplify/ui-react';
+import { Song } from '../../../types/audio';
+
+interface MusicSelectorProps {
+  presetSongs: Song[];
+  onSongSelect: (song: Song) => void;
+  onPlaylistLoad: (url: string) => void;
+  selectedSong: Song | null;
+}
+
+export default function MusicSelector({ 
+  presetSongs, 
+  onSongSelect, 
+  onPlaylistLoad,
+  selectedSong 
+}: MusicSelectorProps) {
+  const [playlistUrl, setPlaylistUrl] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [filterText, setFilterText] = useState('');
+
+  const filteredSongs = presetSongs.filter((song) =>
+    song.title.toLowerCase().includes(filterText.toLowerCase()) ||
+    song.artist.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  return (
+    <Card padding="medium">
+      <Text fontSize="large" fontWeight="bold">Music Selection</Text>
+      <Flex gap="medium" direction={{ base: 'column', medium: 'row' }} marginTop="small">
+        <View flex={1}>
+          <Text fontWeight="semibold" marginBottom="small">
+            プリセット音楽
+          </Text>
+
+          {/* 簡単な検索フィールドを追加 */}
+          <input
+            type="text"
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            placeholder="タイトル/アーティスト検索"
+            className="custom-input"
+            style={{
+              width: '100%',
+              marginBottom: '8px',
+              padding: '8px',
+              borderRadius: '4px'
+            }}
+          />
+
+          <View position="relative">
+            <Button
+              width="100%"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              {selectedSong ? selectedSong.title : '音楽を選択'}
+            </Button>
+            {isDropdownOpen && (
+              <Card
+                position="absolute"
+                width="100%"
+                padding="zero"
+                className="dropdown-menu"
+                style={{ marginTop: '4px', zIndex: 100 }}
+              >
+                {filteredSongs.map(song => (
+                  <Button
+                    key={song.id}
+                    variation="link"
+                    width="100%"
+                    textAlign="left"
+                    padding="small"
+                    backgroundColor={selectedSong?.id === song.id ? 'background.tertiary' : undefined}
+                    onClick={() => {
+                      onSongSelect(song);
+                      setIsDropdownOpen(false);
+                    }}
+                  >
+                    <Flex direction="column" gap="xxs">
+                      <Text>{song.title}</Text>
+                      <Text variation="tertiary" fontSize="small">
+                        {song.artist}
+                      </Text>
+                    </Flex>
+                  </Button>
+                ))}
+              </Card>
+            )}
+          </View>
+        </View>
+
+        <View flex={1}>
+          <Text fontWeight="semibold" marginBottom="small">
+            Spotifyプレイリスト
+          </Text>
+          <Flex gap="small">
+            <input
+              type="text"
+              value={playlistUrl}
+              onChange={(e) => setPlaylistUrl(e.target.value)}
+              placeholder="Spotify URL"
+              className="custom-input"
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '4px',
+                border: '1px solid var(--amplify-colors-border-primary)',
+                backgroundColor: 'var(--amplify-colors-background-primary)',
+                color: 'var(--amplify-colors-font-primary)'
+              }}
+            />
+            <Button
+              onClick={() => {
+                onPlaylistLoad(playlistUrl);
+                setPlaylistUrl('');
+              }}
+            >
+              Load
+            </Button>
+          </Flex>
+        </View>
+      </Flex>
+    </Card>
+  );
+}
+
+```
+
+### src/components/shared/SoundSelector.tsx
+
+```
+// src/components/shared/SoundSelector.tsx
+import { Card, Flex, Button, Text, View } from '@aws-amplify/ui-react';
+import { SoundSelectorProps } from '../../../types/audio';
+import { useState } from 'react';
+
+export default function SoundSelector({ sounds, onSoundSelect, selectedSoundId }: SoundSelectorProps) {
+  const [soundMenuType, setSoundMenuType] = useState<'nature' | 'urban' | null>(null);
+
+  const handleMenuOpen = (type: 'nature' | 'urban') => {
+    setSoundMenuType(soundMenuType === type ? null : type);
+  };
+
+  return (
+    <Card padding="medium">
+      <Flex direction="column" gap="medium">
+        <Text fontSize="large" fontWeight="bold">Environmental Sound</Text>
+        
+        <View position="relative">
+          <Flex gap="small">
+            <Button
+              flex={1}
+              backgroundColor={soundMenuType === 'nature' ? 'brand.primary' : 'background.secondary'}
+              onClick={() => handleMenuOpen('nature')}
+            >
+              自然音
+            </Button>
+            <Button
+              flex={1}
+              backgroundColor={soundMenuType === 'urban' ? 'brand.primary' : 'background.secondary'}
+              onClick={() => handleMenuOpen('urban')}
+            >
+              都市音
+            </Button>
+          </Flex>
+
+          {soundMenuType && (
+            <Card
+              position="absolute"
+              top="100%"
+              left="0"
+              right="0"
+              marginTop="2px"
+              padding="zero"
+              style={{ zIndex: 10 }}
+              backgroundColor="background.primary"
+              borderWidth="1px"
+              borderStyle="solid"
+              borderColor="border.primary"
+            >
+              {sounds
+                .filter(sound => sound.category === soundMenuType)
+                .map(sound => (
+                  <Button
+                    key={sound.id}
+                    variation="link"
+                    width="100%"
+                    textAlign="left"
+                    padding="small"
+                    onClick={() => {
+                      onSoundSelect(sound);
+                      setSoundMenuType(null);
+                    }}
+                    style={{
+                      backgroundColor: sound.id === selectedSoundId ? 'rgba(100, 100, 200, 0.2)' : 'transparent'
+                    }}
+                  >
+                    {sound.name}
+                  </Button>
+                ))}
+            </Card>
+          )}
+        </View>
+      </Flex>
+    </Card>
+  );
+}
+
+```
+
+### src/components/shared/BridgeController.tsx
+
+```
+// src/components/shared/BridgeController.tsx
+import { Card, Flex, Text, Image } from '@aws-amplify/ui-react';
+import { BridgeControllerProps } from '../../types/audio';
+
+export default function BridgeController({ 
+  config, 
+  onConfigChange, 
+  selectedSound 
+}: BridgeControllerProps) {
+  const handleDurationChange = (val: number) => {
+    onConfigChange({ ...config, duration: val });
+  };
+
+  const handleFadeChange = (val: number) => {
+    onConfigChange({ ...config, fadeDuration: val });
+  };
+
+  const handleCrossfadeOffsetChange = (val: number) => {
+    onConfigChange({ ...config, crossfadeOffset: val });
+  };
+
+  return (
+    <Card padding="large">
+      <Flex direction="column" gap="large">
+        <Flex justifyContent="space-between" alignItems="center">
+          <Text fontSize="xl" fontWeight="bold">Bridge Control</Text>
+          {selectedSound && (
+            <Flex 
+              gap="small" 
+              alignItems="center"
+              backgroundColor="background.tertiary"
+              padding="medium"
+              borderRadius="medium"
+              width="40%"
+            >
+              <Image
+                src={selectedSound.thumbnail}
+                alt={selectedSound.name}
+                width="32px"
+                height="40px"
+                borderRadius="small"
+              />
+              <Text fontSize="medium">{selectedSound.name}</Text>
+            </Flex>
+          )}
+        </Flex>
+
+        <Flex direction="column" gap="medium">
+          <Text fontSize="large">
+            Bridge Duration ({config.duration.toFixed(1)}s)
+          </Text>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            step={0.5}
+            value={config.duration}
+            onChange={(e) => handleDurationChange(parseFloat(e.target.value))}
+            className="custom-slider"
+          />
+        </Flex>
+
+        <Flex direction="column" gap="medium">
+          <Text fontSize="large">
+            Fade Duration ({config.fadeDuration.toFixed(1)}s)
+          </Text>
+          <input
+            type="range"
+            min={0.2}
+            max={2}
+            step={0.1}
+            value={config.fadeDuration}
+            onChange={(e) => handleFadeChange(parseFloat(e.target.value))}
+            className="custom-slider"
+          />
+        </Flex>
+
+        {/* crossfadeOffsetを追加 */}
+        <Flex direction="column" gap="medium">
+          <Text fontSize="large">
+            Crossfade Offset ({config.crossfadeOffset.toFixed(1)}s)
+          </Text>
+          <input
+            type="range"
+            min={-2}
+            max={2}
+            step={0.1}
+            value={config.crossfadeOffset}
+            onChange={(e) => handleCrossfadeOffsetChange(parseFloat(e.target.value))}
+            className="custom-slider"
+          />
+          <Text fontSize="small" color="font.tertiary">
+            負値: 先にBridgeを被せる / 正値: 曲Aの終端とBridge再生を遅らせる
+          </Text>
+        </Flex>
+      </Flex>
+    </Card>
+  );
+}
+
+```
+
+### src/vite-env.d.ts
+
+```
+/// <reference types="vite/client" />
+
+```
+
+### src/lib/utils.ts
+
+```
+// src/lib/utils.ts
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+```
+
+### src/lib/ExperimentDataStore.ts
+
+```
+// src/lib/ExperimentDataStore.ts
+import { DataStore } from 'aws-amplify/datastore';
+import { 
+  ExperimentSession, 
+  TransitionEvent, 
+  ReviewData 
+} from '../types/audio';
+
+export class ExperimentDataStore {
+  private currentSession: ExperimentSession | null = null;
+  private transitions: TransitionEvent[] = [];
+  private reviews: ReviewData[] = [];
+  private retryAttempts = 3;
+  private retryDelay = 1000; // 1 second
+
+  private async retry<T>(operation: () => Promise<T>): Promise<T> {
+    let lastError: unknown;
+    for (let i = 0; i < this.retryAttempts; i++) {
+      try {
+        return await operation();
+      } catch (error: unknown) {
+        lastError = error;
+        await new Promise(resolve => setTimeout(resolve, this.retryDelay));
+      }
+    }
+    if (lastError instanceof Error) {
+      throw lastError;
+    }
+    throw new Error('Unknown error occurred during retry');
+  }
+
+  /**
+   * セッションを開始する。
+   * 既にセッションが始まっている場合はエラーを投げずにスキップ。
+   */
+  async startSession(): Promise<string> {
+    // すでにセッションが開始されていればエラーを投げずスキップ
+    if (this.currentSession) {
+      console.warn('Session is already active. Skipping creation.');
+      return this.currentSession.sessionId;
+    }
+
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    this.currentSession = {
+      sessionId,
+      startTime: new Date().toISOString(),
+      transitions: [],
+      reviews: []
+    };
+
+    try {
+      await this.retry(() => 
+        DataStore.save({
+          ...this.currentSession
+        })
+      );
+      return sessionId;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to start session: ${message}`);
+    }
+  }
+
+  async logTransition(event: Omit<TransitionEvent, 'eventId' | 'sessionId'>): Promise<string> {
+    if (!this.currentSession) {
+      throw new Error('No active session');
+    }
+
+    const transitionEvent: TransitionEvent = {
+      eventId: `transition_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      sessionId: this.currentSession.sessionId,
+      ...event
+    };
+
+    try {
+      await this.retry(() => 
+        DataStore.save({
+          ...transitionEvent
+        })
+      );
+
+      this.transitions.push(transitionEvent);
+      return transitionEvent.eventId;
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to log transition: ${message}`);
+    }
+  }
+
+  async saveReview(reviewData: Omit<ReviewData, 'timestamp'>): Promise<void> {
+    if (!this.currentSession) {
+      throw new Error('No active session');
+    }
+
+    if (this.transitions.length === 0) {
+      throw new Error('No transition event to associate review with');
+    }
+
+    const review: ReviewData = {
+      ...reviewData,
+      timestamp: Date.now()
+    };
+
+    try {
+      await this.retry(() => 
+        DataStore.save({
+          ...review
+        })
+      );
+
+      this.reviews.push(review);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to save review: ${message}`);
+    }
+  }
+
+  async endSession(): Promise<void> {
+    if (!this.currentSession) {
+      throw new Error('No active session');
+    }
+
+    try {
+      const endTime = new Date().toISOString();
+      
+      await this.retry(() => 
+        DataStore.save({
+          ...this.currentSession,
+          endTime,
+          transitions: this.transitions,
+          reviews: this.reviews
+        })
+      );
+
+      try {
+        localStorage.setItem(
+          `session_backup_${this.currentSession.sessionId}`, 
+          JSON.stringify({
+            ...this.currentSession,
+            endTime,
+            transitions: this.transitions,
+            reviews: this.reviews
+          })
+        );
+      } catch (error) {
+        console.warn('Failed to save session backup to localStorage:', error);
+      }
+
+      this.currentSession = null;
+      this.transitions = [];
+      this.reviews = [];
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to end session: ${message}`);
+    }
+  }
+
+  async getSessionData(): Promise<ExperimentSession | null> {
+    if (!this.currentSession) {
+      return null;
+    }
+
+    return {
+      ...this.currentSession,
+      transitions: [...this.transitions],
+      reviews: [...this.reviews]
+    };
+  }
+
+  isSessionActive(): boolean {
+    return this.currentSession !== null;
+  }
+
+  getTransitionCount(): number {
+    return this.transitions.length;
+  }
+
+  getReviewCount(): number {
+    return this.reviews.length;
+  }
+
+  async exportSessionBackup(): Promise<string> {
+    if (!this.currentSession) {
+      throw new Error('No active session');
+    }
+
+    const sessionData = {
+      ...this.currentSession,
+      transitions: this.transitions,
+      reviews: this.reviews,
+      exportedAt: new Date().toISOString()
+    };
+
+    return JSON.stringify(sessionData);
+  }
+}
+
+```
+
+### src/lib/StorageManager.ts
+
+```
+// src/lib/StorageManager.ts
+import { getUrl } from 'aws-amplify/storage';
+import { AudioLoadError } from '../../types/audio';
+
+export class StorageManager {
+  private static instance: StorageManager;
+  private urlCache: Map<string, string> = new Map();
+  
+  private constructor() {}
+
+  static getInstance(): StorageManager {
+    if (!StorageManager.instance) {
+      StorageManager.instance = new StorageManager();
+    }
+    return StorageManager.instance;
+  }
+
+  async getAudioUrl(key: string): Promise<string> {
+    try {
+      const cached = this.urlCache.get(key);
+      if (cached) return cached;
+
+      const { url } = await getUrl({
+        key,
+        options: {
+          validateObjectExistence: true,
+          expiresIn: 3600
+        }
+      });
+
+      if (!url) {
+        throw new Error('Failed to get URL');
+      }
+
+      const urlString = url.toString();
+      this.urlCache.set(key, urlString);
+      return urlString;
+
+    } catch (error) {
+      throw new AudioLoadError(`Failed to get audio URL for ${key}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  async preloadUrls(keys: string[]): Promise<void> {
+    await Promise.all(
+      keys.map(key => this.getAudioUrl(key).catch(error => {
+        console.warn(`Failed to preload URL for ${key}:`, error);
+      }))
+    );
+  }
+
+  clearCache(): void {
+    this.urlCache.clear();
+  }
+}
+
+```
+
+### src/lib/AudioEngine.tsx
+
+```
+// src/lib/AudioEngine.tsx
+import { getUrl } from 'aws-amplify/storage';
+import { BridgeConfig, AudioLoadError, PlaybackError } from '../types/audio';
+
+interface AudioNode {
+  source: AudioBufferSourceNode;
+  gainNode: GainNode;
+  startTime?: number;
+}
+
+export class AudioEngine {
+  private context: AudioContext;
+  private currentTrack: AudioNode | null = null;
+  private nextTrack: AudioNode | null = null;
+  private bridgeSound: AudioNode | null = null;
+  private bufferCache: Map<string, AudioBuffer> = new Map();
+  private urlCache: Map<string, string> = new Map();
+  private isInitialized = false;
+
+  constructor() {
+    this.context = new AudioContext();
+  }
+
+  async initialize(): Promise<void> {
+    try {
+      if (this.context.state === 'suspended') {
+        await this.context.resume();
+      }
+      this.isInitialized = true;
+    } catch (error) {
+      throw new AudioLoadError('Failed to initialize audio context');
+    }
+  }
+
+  private checkInitialization(): void {
+    if (!this.isInitialized) {
+      throw new AudioLoadError('AudioEngine not initialized');
+    }
+  }
+
+  async getAudioUrl(key: string): Promise<string> {
+    try {
+      const cached = this.urlCache.get(key);
+      if (cached) return cached;
+
+      const { url } = await getUrl({
+        key,
+        options: {
+          validateObjectExistence: true,
+          expiresIn: 3600
+        }
+      });
+
+      if (!url) {
+        throw new Error('Failed to get URL');
+      }
+
+      const urlString = url.toString();
+      this.urlCache.set(key, urlString);
+      return urlString;
+    } catch (error) {
+      throw new AudioLoadError(`Failed to get audio URL for ${key}: ${
+        error instanceof Error ? error.message : String(error)
+      }`);
+    }
+  }
+
+  async loadAudioFromStorage(key: string): Promise<AudioBuffer> {
+    const url = await this.getAudioUrl(key);
+    return this.loadAudio(url);
+  }
+
+  async loadAudio(url: string): Promise<AudioBuffer> {
+    this.checkInitialization();
+    
+    try {
+      const cached = this.bufferCache.get(url);
+      if (cached) return cached;
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new AudioLoadError(`Failed to load audio: ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+      
+      this.bufferCache.set(url, audioBuffer);
+      return audioBuffer;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new AudioLoadError(error.message);
+      }
+      throw new AudioLoadError('Unknown error occurred');
+    }
+  }
+
+  async preloadAudios(keys: string[]): Promise<void> {
+    for (const key of keys.slice(0, 2)) {
+      try {
+        await this.loadAudioFromStorage(key);
+      } catch (error) {
+        console.warn(`Failed to preload audio: ${key}`, error);
+      }
+    }
+  }
+
+  private createAudioNode(buffer: AudioBuffer): AudioNode {
+    const source = this.context.createBufferSource();
+    const gainNode = this.context.createGain();
+
+    source.buffer = buffer;
+    source.connect(gainNode);
+    gainNode.connect(this.context.destination);
+
+    return { source, gainNode };
+  }
+
+  async play(buffer: AudioBuffer): Promise<void> {
+    this.checkInitialization();
+    
+    try {
+      await this.stopCurrent();
+      
+      const node = this.createAudioNode(buffer);
+      node.startTime = this.context.currentTime;
+      node.source.start();
+      this.currentTrack = node;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new AudioLoadError(error.message);
+      }
+      throw new AudioLoadError('Unknown error occurred');
+    }
+  }
+
+  async performTransition(
+    nextBuffer: AudioBuffer,
+    bridgeBuffer: AudioBuffer,
+    config: BridgeConfig
+  ): Promise<void> {
+    this.checkInitialization();
+
+    if (!this.currentTrack) {
+      throw new PlaybackError('No current track playing');
+    }
+
+    const { duration, fadeDuration, crossfadeOffset } = config;
+
+    try {
+      const currentTime = this.context.currentTime;
+
+      // 現在再生中トラックのフェードアウト
+      this.currentTrack.gainNode.gain.linearRampToValueAtTime(
+        0,
+        currentTime + fadeDuration
+      );
+
+      // Bridge 音の再生開始
+      const bridgeNode = this.createAudioNode(bridgeBuffer);
+      bridgeNode.gainNode.gain.setValueAtTime(0, currentTime + crossfadeOffset);
+      bridgeNode.gainNode.gain.linearRampToValueAtTime(
+        1,
+        currentTime + fadeDuration + crossfadeOffset
+      );
+      bridgeNode.gainNode.gain.linearRampToValueAtTime(
+        0,
+        currentTime + duration - fadeDuration + crossfadeOffset
+      );
+      bridgeNode.source.start(currentTime + crossfadeOffset);
+      this.bridgeSound = bridgeNode;
+
+      // 次の曲をフェードイン開始
+      const nextNode = this.createAudioNode(nextBuffer);
+      nextNode.gainNode.gain.setValueAtTime(
+        0,
+        currentTime + duration - fadeDuration + crossfadeOffset
+      );
+      nextNode.gainNode.gain.linearRampToValueAtTime(
+        1,
+        currentTime + duration + crossfadeOffset
+      );
+      nextNode.source.start(currentTime + duration - fadeDuration + crossfadeOffset);
+      this.nextTrack = nextNode;
+
+      setTimeout(() => {
+        this.currentTrack?.source.stop();
+        this.currentTrack = this.nextTrack;
+        this.nextTrack = null;
+        this.bridgeSound = null;
+      }, (duration + fadeDuration + crossfadeOffset) * 1000);
+
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new AudioLoadError(error.message);
+      }
+      throw new AudioLoadError('Unknown error occurred');
+    }
+  }
+
+  async performMultiBridge(
+    bridgeBuffers: AudioBuffer[],
+    nextBuffer: AudioBuffer,
+    config: BridgeConfig
+  ): Promise<void> {
+    this.checkInitialization();
+    if (!this.currentTrack) {
+      throw new PlaybackError('No current track playing');
+    }
+
+    try {
+      const currentTime = this.context.currentTime;
+      const { fadeDuration } = config;
+
+      // まず currentTrack をフェードアウト
+      this.currentTrack.gainNode.gain.linearRampToValueAtTime(
+        0,
+        currentTime + fadeDuration
+      );
+
+      let t = currentTime + fadeDuration;
+      for (let i = 0; i < bridgeBuffers.length; i++) {
+        const buffer = bridgeBuffers[i];
+        const node = this.createAudioNode(buffer);
+        node.gainNode.gain.setValueAtTime(0, t);
+        node.gainNode.gain.linearRampToValueAtTime(1, t + fadeDuration);
+        node.source.start(t);
+
+        const playbackDuration = buffer.duration;
+        t += playbackDuration;
+      }
+
+      // 全Bridge音再生後に次曲をフェードイン
+      const nextNode = this.createAudioNode(nextBuffer);
+      nextNode.gainNode.gain.setValueAtTime(0, t);
+      nextNode.gainNode.gain.linearRampToValueAtTime(1, t + fadeDuration);
+      nextNode.source.start(t);
+      this.nextTrack = nextNode;
+
+      setTimeout(() => {
+        this.currentTrack?.source.stop();
+        this.currentTrack = this.nextTrack;
+        this.nextTrack = null;
+      }, (t - currentTime + fadeDuration) * 1000);
+
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new AudioLoadError(error.message);
+      }
+      throw new AudioLoadError('Unknown error occurred');
+    }
+  }
+
+  private async stopCurrent(): Promise<void> {
+    if (this.currentTrack?.startTime !== undefined) {
+      try {
+        this.currentTrack.source.stop();
+      } catch (error) {
+        // ignore
+      }
+    }
+    this.currentTrack = null;
+  }
+
+  pause(): void {
+    this.checkInitialization();
+    if (this.context.state === 'running') {
+      this.context.suspend();
+    }
+  }
+
+  resume(): void {
+    this.checkInitialization();
+    if (this.context.state === 'suspended') {
+      this.context.resume();
+    }
+  }
+
+  dispose(): void {
+    try {
+      this.stopCurrent();
+      this.bufferCache.clear();
+      this.urlCache.clear();
+      this.context.close();
+      this.isInitialized = false;
+    } catch (error) {
+      console.error('Error disposing AudioEngine:', error);
+    }
+  }
+
+  isPlaying(): boolean {
+    return this.currentTrack !== null && this.context.state === 'running';
+  }
+
+  getCurrentTime(): number {
+    if (!this.currentTrack?.startTime) return 0;
+    return this.context.currentTime - this.currentTrack.startTime;
+  }
+
+  async initializeForMobile(): Promise<void> {
+    if (this.context.state === 'suspended') {
+      await this.context.resume();
+    }
+    
+    const buffer = this.context.createBuffer(1, 1, 22050);
+    const source = this.context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.context.destination);
+    source.start(0);
+  }
+
+  getBridgeSound(): AudioNode | null {
+    return this.bridgeSound;
+  }
+}
+
+```
+
+### src/data/environmentalSounds.tsx
+
+```
+// src/data/environmentalSounds.tsx
+import { EnvironmentalSound } from '../../types/audio';
+
+export const environmentalSounds: EnvironmentalSound[] = [
+  {
+    id: 'env1',
+    name: '波の音',
+    category: 'nature',
+    subCategory: 'water',
+    characteristics: ['peaceful', 'continuous'],
+    src: '/audio/environmental/wave.mp3',
+    thumbnail: '/images/s.jpg'
+  },
+  {
+    id: 'env2',
+    name: '雨の音',
+    category: 'nature',
+    subCategory: 'weather',
+    characteristics: ['ambient', 'soothing'],
+    src: '/audio/environmental/rain.mp3',
+    thumbnail: '/images/r.jpg'
+  },
+  {
+    id: 'env3',
+    name: '街の喧騒',
+    category: 'urban',
+    subCategory: 'city',
+    characteristics: ['busy', 'dynamic'],
+    src: '/audio/environmental/city.mp3',
+    thumbnail: '/images/c.jpg'
+  },
+  {
+    id: 'env4',
+    name: 'カフェの雰囲気',
+    category: 'urban',
+    subCategory: 'indoor',
+    characteristics: ['social', 'warm'],
+    src: '/audio/environmental/cafe.mp3',
+    thumbnail: '/images/ca.jpg'
+  }
+];
+
+```
+
+### src/data/songs.tsx
+
+```
+// src/data/songs.tsx
+import { Song } from '../../types/audio';
+
+export const songs: Song[] = [
+  {
+    id: 'song1',
+    title: 'test1',
+    artist: 'Test Artist 1',
+    path: '/audio/11.mp3',
+    albumArt: '/images/11.jpg'
+  },
+  {
+    id: 'song2',
+    title: 'test2',
+    artist: 'Test Artist 2',
+    path: '/audio/22.mp3',
+    albumArt: '/images/22.jpg'
+  },
+];
+
+```
+
+### src/assets/react.svg
+
+```
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+```
+
+### src/pages/ExperimentFlow.tsx
+
+```
+// src/pages/ExperimentFlow.tsx
+import { useState, useEffect } from 'react';
+import {
+  Button,
+  Flex,
+  Text,
+  View,
+  Card,
+  StepperField
+} from '@aws-amplify/ui-react';
+
+import { ReviewDialog } from '../components/shared/ReviewDialog';
+import {
+  Song,
+  EnvironmentalSound,
+  BridgeConfig,
+  ReviewData,
+} from '../types/audio';
+import { songs } from '../data/songs';
+import { environmentalSounds } from '../data/environmentalSounds';
+import MusicSelector from '../components/shared/MusicSelector';
+import SoundSelector from '../components/shared/SoundSelector';
+import BridgeController from '../components/shared/BridgeController';
+import MultiBridgeController from '../components/shared/MultiBridgeController';
+import AudioPlayer from '../components/shared/AudioPlayer';
+
+export default function ExperimentFlow() {
+  // ステップ管理: 0=楽曲選択 → 1=環境音選択 → 2=Bridge設定 → 3=再生＆評価
+  const [stepIndex, setStepIndex] = useState(0);
+
+  // 楽曲＆環境音データ
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [nextSong, setNextSong] = useState<Song | null>(null);
+  const [selectedSound, setSelectedSound] = useState<EnvironmentalSound | null>(null);
+  const [multiBridgeSounds, setMultiBridgeSounds] = useState<EnvironmentalSound[]>([]);
+
+  // Bridge 設定パラメータ
+  const [bridgeConfig, setBridgeConfig] = useState<BridgeConfig>({
+    duration: 5,
+    fadeDuration: 1,
+    environmentalSoundId: '',
+    crossfadeOffset: 0,
+    bridgeSoundCount: 1
+  });
+
+  // レビューDialog
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+
+  // 初期化：とりあえず先頭の曲を currentSong, 2番目を nextSong
+  useEffect(() => {
+    if (songs.length > 0) {
+      setCurrentSong(songs[0]);
+      if (songs.length > 1) {
+        setNextSong(songs[1]);
+      }
+    }
+  }, []);
+
+  // ステップ前進
+  const handleNextStep = () => {
+    if (stepIndex < 3) {
+      setStepIndex(stepIndex + 1);
+    } else {
+      // ステップ3→4相当になったらレビューDialogを開く
+      setIsReviewOpen(true);
+    }
+  };
+
+  // ステップ戻る
+  const handlePrevStep = () => {
+    if (stepIndex > 0) {
+      setStepIndex(stepIndex - 1);
+    }
+  };
+
+  // ReviewDialog の送信イベント
+  const handleReviewSubmit = (data: ReviewData): void => {
+    console.log('Review submitted:', data);
+    setIsReviewOpen(false);
+    // 必要に応じて DataStore.saveReview(...) を呼ぶ
+  };
+
+  return (
+    <View>
+      {/* ステップの進捗UI */}
+      <Card marginBottom="medium">
+        <Text fontWeight="bold">実験ステップ</Text>
+        <StepperField
+          label="Stepper"
+          labelHidden
+          min={0}
+          max={3}
+          step={1}
+          value={stepIndex}
+          isDisabled
+        />
+      </Card>
+
+      {/* ステップごとのUI */}
+      {stepIndex === 0 && (
+        <Card padding="medium" marginBottom="medium">
+          <Text fontWeight="bold" marginBottom="small">
+            Step 1: 楽曲選択
+          </Text>
+          <MusicSelector
+            presetSongs={songs}
+            onSongSelect={(song: Song) => setNextSong(song)}
+            selectedSong={nextSong}
+            onPlaylistLoad={(url: string) => {
+              console.log('Loading playlist:', url);
+            }}
+          />
+        </Card>
+      )}
+
+      {stepIndex === 1 && (
+        <Card padding="medium" marginBottom="medium">
+          <Text fontWeight="bold" marginBottom="small">
+            Step 2: 環境音選択
+          </Text>
+          <SoundSelector
+            sounds={environmentalSounds}
+            onSoundSelect={(sound: EnvironmentalSound) => {
+              setSelectedSound(sound);
+              // BridgeConfigにも反映
+              setBridgeConfig((prev) => ({
+                ...prev,
+                environmentalSoundId: sound.id
+              }));
+            }}
+            selectedSoundId={selectedSound?.id}
+          />
+          <MultiBridgeController
+            config={bridgeConfig}
+            onConfigChange={setBridgeConfig}
+            availableSounds={environmentalSounds}
+            multiBridgeSounds={multiBridgeSounds}
+            setMultiBridgeSounds={setMultiBridgeSounds}
+          />
+        </Card>
+      )}
+
+      {stepIndex === 2 && (
+        <Card padding="medium" marginBottom="medium">
+          <Text fontWeight="bold" marginBottom="small">
+            Step 3: パラメータ調整
+          </Text>
+          <BridgeController
+            config={bridgeConfig}
+            onConfigChange={setBridgeConfig}
+            selectedSound={selectedSound}
+          />
+        </Card>
+      )}
+
+      {stepIndex === 3 && (
+        <Card padding="medium" marginBottom="medium">
+          <Text fontWeight="bold" marginBottom="small">
+            Step 4: 再生 & 評価
+          </Text>
+          <AudioPlayer
+            currentSong={currentSong}
+            onPlayStateChange={(isPlaying: boolean) => {
+              console.log('Playback state changed:', isPlaying);
+            }}
+          />
+          <Text marginTop="small" fontStyle="italic" fontSize="small">
+            ※ 再生後，問題なければ「次へ」を押し、レビュー入力へ進んでください
+          </Text>
+        </Card>
+      )}
+
+      {/* ナビゲーションボタン */}
+      <Flex marginTop="medium" gap="small">
+        <Button onClick={handlePrevStep} isDisabled={stepIndex === 0}>
+          戻る
+        </Button>
+        <Button onClick={handleNextStep} variation="primary" isDisabled={stepIndex > 3}>
+          {stepIndex < 3 ? '次へ' : '評価へ'}
+        </Button>
+      </Flex>
+
+      {/* レビュー入力用ダイアログ */}
+      <ReviewDialog
+        isOpen={isReviewOpen}
+        onClose={() => setIsReviewOpen(false)}
+        onSubmit={handleReviewSubmit}
+        currentTrack={currentSong}
+        nextTrack={nextSong}
+        bridgeSound={selectedSound}
+      />
+    </View>
+  );
+}
+
+```
+
+### src/pages/Experiment.tsx
+
+```
+// src/pages/Experiment.tsx
+import { useState, useEffect } from 'react';
+import { Card, Grid, View } from '@aws-amplify/ui-react';
+import AudioPlayer from '../components/shared/AudioPlayer';
+import SoundSelector from '../components/shared/SoundSelector';
+import BridgeController from '../components/shared/BridgeController';
+import MultiBridgeController from '../components/shared/MultiBridgeController';
+import { Song, EnvironmentalSound, BridgeConfig } from '../types/audio';
+import { songs } from '../data/songs';
+import { environmentalSounds } from '../data/environmentalSounds';
+
+export default function Experiment() {
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [nextSong, setNextSong] = useState<Song | null>(null);
+  const [selectedSound, setSelectedSound] = useState<EnvironmentalSound | null>(null);
+  const [multiBridgeSounds, setMultiBridgeSounds] = useState<EnvironmentalSound[]>([]);
+  const [bridgeConfig, setBridgeConfig] = useState<BridgeConfig>({
+    duration: 5,
+    fadeDuration: 1,
+    environmentalSoundId: '',
+    crossfadeOffset: 0,
+    bridgeSoundCount: 1
+  });
+
+  useEffect(() => {
+    if (songs.length > 0) {
+      setCurrentSong(songs[0]);
+      if (songs.length > 1) {
+        setNextSong(songs[1]);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (nextSong) {
+      console.log('Next song queued:', nextSong.title);
+    }
+  }, [nextSong]);
+
+  return (
+    <View padding="medium">
+      <Grid
+        templateColumns={{ base: '1fr', medium: '1fr 300px' }}
+        gap="medium"
+      >
+        <Card padding="medium">
+          <BridgeController
+            config={bridgeConfig}
+            onConfigChange={setBridgeConfig}
+            selectedSound={selectedSound}
+          />
+          <SoundSelector
+            sounds={environmentalSounds}
+            onSoundSelect={(sound: EnvironmentalSound) => setSelectedSound(sound)}
+            selectedSoundId={selectedSound?.id}
+          />
+
+          <MultiBridgeController
+            config={bridgeConfig}
+            onConfigChange={setBridgeConfig}
+            availableSounds={environmentalSounds}
+            multiBridgeSounds={multiBridgeSounds}
+            setMultiBridgeSounds={setMultiBridgeSounds}
+          />
+        </Card>
+
+        <View>
+          <AudioPlayer
+            currentSong={currentSong}
+            onPlayStateChange={(isPlaying: boolean) => {
+              console.log('Playback state changed:', isPlaying);
+            }}
+          />
+        </View>
+      </Grid>
+    </View>
+  );
+}
+
+```
+

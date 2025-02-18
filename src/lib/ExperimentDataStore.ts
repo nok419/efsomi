@@ -1,10 +1,10 @@
-// src/lib/data/ExperimentDataStore.ts
+// src/lib/ExperimentDataStore.ts
 import { DataStore } from 'aws-amplify/datastore';
 import { 
   ExperimentSession, 
   TransitionEvent, 
   ReviewData 
-} from '../../types/audio';
+} from '../types/audio';
 
 export class ExperimentDataStore {
   private currentSession: ExperimentSession | null = null;
@@ -29,9 +29,15 @@ export class ExperimentDataStore {
     throw new Error('Unknown error occurred during retry');
   }
 
+  /**
+   * セッションを開始する。
+   * 既にセッションが始まっている場合はエラーを投げずにスキップ。
+   */
   async startSession(): Promise<string> {
+    // すでにセッションが開始されていればエラーを投げずスキップ
     if (this.currentSession) {
-      throw new Error('Session already exists');
+      console.warn('Session is already active. Skipping creation.');
+      return this.currentSession.sessionId;
     }
 
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -51,9 +57,9 @@ export class ExperimentDataStore {
       );
       return sessionId;
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
-        throw new Error(`Failed to [operation name]: ${message}`);
-      }
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to start session: ${message}`);
+    }
   }
 
   async logTransition(event: Omit<TransitionEvent, 'eventId' | 'sessionId'>): Promise<string> {
@@ -77,9 +83,9 @@ export class ExperimentDataStore {
       this.transitions.push(transitionEvent);
       return transitionEvent.eventId;
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
-        throw new Error(`Failed to [operation name]: ${message}`);
-      }
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to log transition: ${message}`);
+    }
   }
 
   async saveReview(reviewData: Omit<ReviewData, 'timestamp'>): Promise<void> {
@@ -105,9 +111,9 @@ export class ExperimentDataStore {
 
       this.reviews.push(review);
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
-        throw new Error(`Failed to [operation name]: ${message}`);
-      }
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to save review: ${message}`);
+    }
   }
 
   async endSession(): Promise<void> {
@@ -127,14 +133,16 @@ export class ExperimentDataStore {
         })
       );
 
-      // バックアップとしてローカルストレージにも保存
       try {
-        localStorage.setItem(`session_backup_${this.currentSession.sessionId}`, JSON.stringify({
-          ...this.currentSession,
-          endTime,
-          transitions: this.transitions,
-          reviews: this.reviews
-        }));
+        localStorage.setItem(
+          `session_backup_${this.currentSession.sessionId}`, 
+          JSON.stringify({
+            ...this.currentSession,
+            endTime,
+            transitions: this.transitions,
+            reviews: this.reviews
+          })
+        );
       } catch (error) {
         console.warn('Failed to save session backup to localStorage:', error);
       }
@@ -143,9 +151,9 @@ export class ExperimentDataStore {
       this.transitions = [];
       this.reviews = [];
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Unknown error occurred';
-        throw new Error(`Failed to [operation name]: ${message}`);
-      }
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      throw new Error(`Failed to end session: ${message}`);
+    }
   }
 
   async getSessionData(): Promise<ExperimentSession | null> {
@@ -172,7 +180,6 @@ export class ExperimentDataStore {
     return this.reviews.length;
   }
 
-  // リカバリ用の関数
   async exportSessionBackup(): Promise<string> {
     if (!this.currentSession) {
       throw new Error('No active session');

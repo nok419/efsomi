@@ -1,19 +1,21 @@
-import { Card, Flex, Button, Text, View } from '@aws-amplify/ui-react';
-import { SoundSelectorProps } from '../../../types/audio';
+// src/components/shared/SoundSelector.tsx
 import { useState } from 'react';
+import { Card, Flex, Button, Text, View } from '@aws-amplify/ui-react';
+import { SoundSelectorProps } from '../../types/audio';
 
-export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorProps) {
+export default function SoundSelector({ sounds, onSoundSelect, selectedSoundId }: SoundSelectorProps) {
   const [soundMenuType, setSoundMenuType] = useState<'nature' | 'urban' | null>(null);
 
+  // "自然音" / "都市音" ボタン
   const handleMenuOpen = (type: 'nature' | 'urban') => {
-    setSoundMenuType(soundMenuType === type ? null : type);
+    setSoundMenuType(prev => (prev === type ? null : type));
   };
 
   return (
     <Card padding="medium">
       <Flex direction="column" gap="medium">
         <Text fontSize="large" fontWeight="bold">Environmental Sound</Text>
-        
+
         <View position="relative">
           <Flex gap="small">
             <Button
@@ -32,6 +34,7 @@ export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorPr
             </Button>
           </Flex>
 
+          {/* ドロップダウン */}
           {soundMenuType && (
             <Card
               position="absolute"
@@ -47,7 +50,7 @@ export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorPr
               borderColor="border.primary"
             >
               {sounds
-                .filter(sound => sound.category === soundMenuType)
+                .filter(s => s.category === soundMenuType)
                 .map(sound => (
                   <Button
                     key={sound.id}
@@ -58,6 +61,9 @@ export default function SoundSelector({ sounds, onSoundSelect }: SoundSelectorPr
                     onClick={() => {
                       onSoundSelect(sound);
                       setSoundMenuType(null);
+                    }}
+                    style={{
+                      backgroundColor: sound.id === selectedSoundId ? 'rgba(100,100,200,0.2)' : 'transparent'
                     }}
                   >
                     {sound.name}
